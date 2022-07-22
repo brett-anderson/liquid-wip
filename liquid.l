@@ -73,8 +73,10 @@ space   [ \n\v\f\t\r]
 <S_TAG>"raw"{space}*-?"%}" { BEGIN S_RAW; }
 <S_TAG>"comment"{space}*-?"%}" { BEGIN S_COMMENT; }
 
-<S_COMMENT>.*"{%"-?{space}*"endcomment"{space}*"%}" { BEGIN S_TEXT; }
-<S_COMMENT>.*"{%"-?{space}*"endcomment"{space}*"-%}" { BEGIN S_EAT_WS; }
+<S_COMMENT>"{%"-?{space}*"endcomment"{space}*"%}" { BEGIN S_TEXT; }
+<S_COMMENT>"{%"-?{space}*"endcomment"{space}*"-%}" { BEGIN S_EAT_WS; }
+<S_COMMENT>[^{]*     ;
+<S_COMMENT>"{"       { yymore(); }
 
  /* TODO: remove the {%endraw%}
   * TODO: What does {%- endraw %} do?
