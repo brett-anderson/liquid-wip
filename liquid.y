@@ -6,7 +6,8 @@ int yylex();
 void yyerror(char *msg);
 %}
 
-%token START
+%token START 
+%token RAW COMMENT
 
 %%
 start: START

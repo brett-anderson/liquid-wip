@@ -24,6 +24,10 @@ void yyerror(char *msg);
 /* Interior of an {{ output }} */
 %state S_OUTPUT
 
+%state S_RAW
+
+%state S_COMMENT
+
 ID_char [^[:space:]!"#%&'()*+,./;<=>[\\\]^`{|}~]
 ID      {ID_char}+
 space   [ \n\v\f\t\r]
@@ -59,14 +63,29 @@ space   [ \n\v\f\t\r]
                        printf("\x1b[31m<Text:%s>\x1b[0m\n", yytext);
                      }
 
-<S_OUTPUT,S_TAG>{ID} {
-                       printf("id: !!!%s!!!\n", yytext);
-                     }
+<S_OUTPUT,S_TAG>{ID} { printf("id: !!!%s!!!\n", yytext); }
 
 <S_OUTPUT,S_TAG>{space}+ ;
 
 <S_OUTPUT>"}}"       { BEGIN S_TEXT; }
 <S_TAG>"%}"          { BEGIN S_TEXT; }
+
+<S_TAG>"raw"{space}*-?"%}" { BEGIN S_RAW; }
+<S_TAG>"comment"{space}*-?"%}" { BEGIN S_COMMENT; }
+
+<S_COMMENT>.*"{%"-?{space}*"endcomment"{space}*"%}" { BEGIN S_TEXT; }
+<S_COMMENT>.*"{%"-?{space}*"endcomment"{space}*"-%}" { BEGIN S_EAT_WS; }
+
+ /* TODO: remove the {%endraw%}
+  * TODO: What does {%- endraw %} do?
+  */
+<S_RAW>.*"{%"-?{space}*"endraw"{space}*"%}" {
+                       printf("\x1b[31m<Text:%s>\x1b[0m\n", yytext);
+                       BEGIN S_TEXT;
+                     }
+<S_RAW>.*"{%"-?{space}*"endraw"{space}*"-%}" {
+                       BEGIN S_EAT_WS;
+                     }
 
  /* -}} and -%} don't go directly back to TEXT; they first go to an EAT_WS
   * state that drops leading spaces before returning to TEXT */
@@ -76,6 +95,7 @@ space   [ \n\v\f\t\r]
  /* After -%} or -}}, drop contiguous whitespace */
 <S_EAT_WS>{space}*   { BEGIN S_TEXT; }
 <S_EAT_WS>.          { yyless(0); BEGIN S_TEXT; }
+
 
 .                    { yyerror("unhandled character in input"); }
 
