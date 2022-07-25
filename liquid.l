@@ -145,6 +145,8 @@ space   [ \n\v\f\t\r]
 <S_OUTPUT,S_TAG>"|"         { return PIPE; }
 <S_OUTPUT,S_TAG>"("         { return LPAREN; }
 <S_OUTPUT,S_TAG>")"         { return RPAREN; }
+<S_OUTPUT,S_TAG>"["         { return LSQUARE; }
+<S_OUTPUT,S_TAG>"]"         { return RSQUARE; }
 <S_OUTPUT,S_TAG>"#"         { return HASH; }
 <S_OUTPUT,S_TAG>if          { return IF; }
 <S_OUTPUT,S_TAG>endif       { return ENDIF; }

@@ -4,13 +4,15 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "liquid.h"
 
 int yylex();
 void yyerror(char *msg);
-char* concatf(const char* fmt, ...);
+
 %}
 
 %union {
+  struct node *ast;
   char *str;
   uint32_t ival;
   double dval;
@@ -24,7 +26,7 @@ char* concatf(const char* fmt, ...);
 /* Tag/Output mode operators, etc. */
 %token EQUALS NOT_EQUALS GREATER_THAN GREATER_THAN_EQUALS LESS_THAN
 LESS_THAN_EQUALS SPACESHIP COMMA COLON SET DOT PIPE LPAREN RPAREN
-RANGE_CTOR HASH
+RANGE_CTOR HASH LSQUARE RSQUARE
 
 /* Conditional tags */
 %token IF ENDIF ELSIF ELSE UNLESS ENDUNLESS CASE ENDCASE
@@ -48,9 +50,7 @@ ENDPAGINATE
 /* Other syntax */
 %token WITH AS IN CONTAINS EMPTY BLANK NIL NONE WHEN BY OR AND TRUE FALSE
 
-%type <str> text
-%type <ival> int
-%type <dval> float
+%type <ast> int float text
 %type <boolval> bool
 
 %%
@@ -58,11 +58,11 @@ start: expr
      ;
 
 expr: /* empty */
-    | expr text                { printf("TEXT:   `%s`\n", $2); }
+    | expr text                { printf("TEXT:   `%s`\n", $2->as.str); }
     | expr STRING              { printf("STRING: `%s`\n", $2); }
     | expr ID                  { printf("ID:     %s\n", $2); }
-    | expr int                 { printf("INT:    %d\n", $2); }
-    | expr float               { printf("FLOAT:  %f\n", $2); }
+    | expr int                 { printf("INT:    %d\n", $2->as._int); }
+    | expr float               { printf("FLOAT:  %f\n", $2->as._double); }
     | expr bool                { printf("BOOL:   %d\n", $2); }
     | expr EQUALS              { printf("EQUALS\n"); }
     | expr NOT_EQUALS          { printf("NOT_EQUALS\n"); }
@@ -78,6 +78,8 @@ expr: /* empty */
     | expr PIPE                { printf("PIPE\n"); }
     | expr LPAREN              { printf("LPAREN\n"); }
     | expr RPAREN              { printf("RPAREN\n"); }
+    | expr LSQUARE             { printf("LSQUARE\n"); }
+    | expr RSQUARE             { printf("RSQUARE\n"); }
     | expr RANGE_CTOR          { printf("RANGE_CTOR\n"); }
     | expr HASH                { printf("HASH\n"); }
     | expr IF                  { printf("IF\n"); }
@@ -126,17 +128,17 @@ expr: /* empty */
     | expr AND                 { printf("AND\n"); }
     ;
 
-bool: TRUE  { $$ = true; }
-    | FALSE { $$ = false; }
+bool: TRUE  { $$ = new_bool_node(true); }
+    | FALSE { $$ = new_bool_node(false); }
     ;
 
-int: INT
+int: INT  { $$ = new_int_node($1); }
    ;
 
-float: FLOAT
+float: FLOAT { $$ = new_float_node($1); }
      ;
 
-text: TEXT
+text: TEXT { $$ = new_text_node($1); }
     ;
 
 %%
@@ -165,3 +167,88 @@ char* concatf(const char* fmt, ...) {
   return buf;
 }
 */
+
+
+
+
+
+  /*
+id: ID
+  | IF          { $$ = "if"; }
+  | ENDIF       { $$ = "endif"; }
+  | ELSIF       { $$ = "elsif"; }
+  | ELSE        { $$ = "else"; }
+  | UNLESS      { $$ = "unless"; }
+  | ENDUNLESS   { $$ = "endunless"; }
+  | CASE        { $$ = "case"; }
+  | ENDCASE     { $$ = "endcase"; }
+  | FORM        { $$ = "form"; }
+  | ENDFORM     { $$ = "endform"; }
+  | STYLE       { $$ = "style"; }
+  | ENDSTYLE    { $$ = "endstyle"; }
+  | FOR         { $$ = "for"; }
+  | ENDFOR      { $$ = "endfor"; }
+  | BREAK       { $$ = "break"; }
+  | CONTINUE    { $$ = "continue"; }
+  | CYCLE       { $$ = "cycle"; }
+  | TABLEROW    { $$ = "tablerow"; }
+  | ENDTABLEROW { $$ = "endtablerow"; }
+  | PAGINATE    { $$ = "paginate"; }
+  | ENDPAGINATE { $$ = "endpaginate"; }
+  | S_ECHO      { $$ = "echo"; }
+  | LIQUID      { $$ = "liquid"; }
+  | INCLUDE     { $$ = "include"; }
+  | LAYOUT      { $$ = "layout"; }
+  | RENDER      { $$ = "render"; }
+  | SECTION     { $$ = "section"; }
+  | ASSIGN      { $$ = "assign"; }
+  | CAPTURE     { $$ = "capture"; }
+  | ENDCAPTURE  { $$ = "endcapture"; }
+  | DECREMENT   { $$ = "decrement"; }
+  | INCREMENT   { $$ = "increment"; }
+  | WITH        { $$ = "with"; }
+  | AS          { $$ = "as"; }
+  | IN          { $$ = "in"; }
+  | CONTAINS    { $$ = "contains"; }
+  | EMPTY       { $$ = "empty"; }
+  | BLANK       { $$ = "blank"; }
+  | NIL         { $$ = "nil"; }
+  | NONE        { $$ = "none"; }
+  | WHEN        { $$ = "when"; }
+  | BY          { $$ = "by"; }
+  | OR          { $$ = "or"; }
+  | AND         { $$ = "and"; }
+  ;
+*/
+
+node *new_int_node(int val) {
+  node *node = malloc(sizeof(node)); /* TODO check malloc */
+  node->node_type = nt_int;
+  node->as._int = val;
+  node->children = NULL;
+  return node;
+}
+
+node *new_float_node(double val) {
+  node *node = malloc(sizeof(node)); /* TODO check malloc */
+  node->node_type = nt_float;
+  node->as._double = val;
+  node->children = NULL;
+  return node;
+}
+
+node *new_text_node(char *val) {
+  node *node = malloc(sizeof(node)); /* TODO check malloc */
+  node->node_type = nt_text;
+  node->as.str = val;
+  node->children = NULL;
+  return node;
+}
+
+node *new_bool_node(bool val) {
+  node *node = malloc(sizeof(node)); /* TODO check malloc */
+  node->node_type = nt_text;
+  node->as._bool = val;
+  node->children = NULL;
+  return node;
+}
