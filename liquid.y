@@ -12,9 +12,29 @@ char* concatf(const char* fmt, ...);
   char *str;
 }
 
-%token <str> TEXT ID
+%token <str> TEXT ID STRING
 
-%token START 
+%token EQUALS
+%token NOT_EQUALS
+%token GREATER_THAN
+%token GREATER_THAN_EQUALS
+%token LESS_THAN
+%token LESS_THAN_EQUALS
+%token SPACESHIP
+%token COMMA
+%token COLON
+%token ASSIGN
+%token DOT
+%token PIPE
+%token LPAREN
+%token RPAREN
+%token RANGE_CTOR
+%token HASH
+
+ /* TODO: for, if, etc., should probably be tokens without string contents from
+  * the lexer. but are they reserved words? Can I trust that they won't also be vars?
+  * Maybe not safely?
+  */
 
 %type <str> text
 
@@ -23,8 +43,26 @@ start: expr
      ;
 
 expr: /* empty */
-    | expr text      { printf("TEXT: [[%s]]\n", $2); }
-    | expr ID        { printf("ID:   [[%s]]\n", $2); }
+    | expr text                { printf("TEXT:   [[%s]]\n", $2); }
+    | expr STRING              { printf("STRING: [[%s]]\n", $2); }
+    | expr EQUALS              { printf("EQUALS\n"); }
+    | expr ASSIGN              { printf("ASSIGN\n"); }
+    | expr DOT                 { printf("DOT\n"); }
+    | expr NOT_EQUALS          { printf("NOT_EQUALS\n"); }
+    | expr GREATER_THAN_EQUALS { printf("GREATER_THAN_EQUALS\n"); }
+    | expr SPACESHIP           { printf("SPACESHIP\n"); }
+    | expr LESS_THAN_EQUALS    { printf("LESS_THAN_EQUALS\n"); }
+    | expr LESS_THAN           { printf("LESS_THAN\n"); }
+    | expr GREATER_THAN        { printf("GREATER_THAN\n"); }
+    | expr COLON               { printf("COLON\n"); }
+    | expr COMMA               { printf("COMMA\n"); }
+    | expr PIPE                { printf("PIPE\n"); }
+    | expr DOT                 { printf("DOT\n"); }
+    | expr RANGE_CTOR          { printf("RANGE_CTOR\n"); }
+    | expr LPAREN              { printf("LPAREN\n"); }
+    | expr RPAREN              { printf("RPAREN\n"); }
+    | expr HASH                { printf("HASH\n"); }
+    | expr ID                  { printf("ID:     [[%s]]\n", $2); }
     ;
 
 text: TEXT
