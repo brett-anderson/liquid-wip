@@ -50,8 +50,7 @@ ENDPAGINATE
 /* Other syntax */
 %token WITH AS IN CONTAINS EMPTY BLANK NIL NONE WHEN BY OR AND TRUE FALSE
 
-%type <ast> int float text
-%type <boolval> bool
+%type <ast> int float text id string bool
 
 %%
 start: expr
@@ -59,11 +58,11 @@ start: expr
 
 expr: /* empty */
     | expr text                { printf("TEXT:   `%s`\n", $2->as.str); }
-    | expr STRING              { printf("STRING: `%s`\n", $2); }
-    | expr ID                  { printf("ID:     %s\n", $2); }
+    | expr string              { printf("STRING: `%s`\n", $2->as.str); }
+    | expr id                  { printf("ID:     %s\n", $2->as.str); }
     | expr int                 { printf("INT:    %d\n", $2->as._int); }
     | expr float               { printf("FLOAT:  %f\n", $2->as._double); }
-    | expr bool                { printf("BOOL:   %d\n", $2); }
+    | expr bool                { printf("BOOL:   %d\n", $2->as._bool); }
     | expr EQUALS              { printf("EQUALS\n"); }
     | expr NOT_EQUALS          { printf("NOT_EQUALS\n"); }
     | expr GREATER_THAN        { printf("GREATER_THAN\n"); }
@@ -140,6 +139,12 @@ float: FLOAT { $$ = new_float_node($1); }
 
 text: TEXT { $$ = new_text_node($1); }
     ;
+
+id: ID { $$ = new_id_node($1); }
+  ;
+
+string: STRING { $$ = new_string_node($1); }
+  ;
 
 %%
 
@@ -247,8 +252,24 @@ node *new_text_node(char *val) {
 
 node *new_bool_node(bool val) {
   node *node = malloc(sizeof(node)); /* TODO check malloc */
-  node->node_type = nt_text;
+  node->node_type = nt_bool;
   node->as._bool = val;
+  node->children = NULL;
+  return node;
+}
+
+node *new_id_node(char *val) {
+  node *node = malloc(sizeof(node)); /* TODO check malloc */
+  node->node_type = nt_id;
+  node->as.str = val;
+  node->children = NULL;
+  return node;
+}
+
+node *new_string_node(char *val) {
+  node *node = malloc(sizeof(node)); /* TODO check malloc */
+  node->node_type = nt_string;
+  node->as.str = val;
   node->children = NULL;
   return node;
 }

@@ -11,6 +11,7 @@ enum node_type_t {
   nt_id = 2,
   nt_int = 3,
   nt_float = 4,
+  nt_bool = 5,
 };
 
 struct node {
@@ -34,5 +35,7 @@ node *new_int_node(int val);
 node *new_float_node(double val);
 node *new_text_node(char *val);
 node *new_bool_node(bool val);
+node *new_id_node(char *val);
+node *new_string_node(char *val);
 
 void free_ast(node *ast);
