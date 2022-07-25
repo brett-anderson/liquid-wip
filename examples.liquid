@@ -176,3 +176,13 @@
 {% endcapture %}
 {% decrement variable %}
 {% increment variable %}
+{{ 2 | plus: 2 }} equals 4.
+
+{% unless true and false and false or true %}
+  This evaluates to false, since Liquid checks tags like this:
+
+  true and (false and (false or true))
+  true and (false and true)
+  true and false
+  false
+{% endunless %}

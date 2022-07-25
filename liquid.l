@@ -30,6 +30,8 @@ void yyerror(char *msg);
  /* TODO: find the correct set of valid chars */
 ID_char [^[:space:]:!"#%&'()*+,./;<=>[\\\]^`{|}~]
 ID      {ID_char}+
+int     -?[0-9]+
+float   -?[0-9]+.[0-9]+
 space   [ \n\v\f\t\r]
 
 %%
@@ -125,26 +127,76 @@ space   [ \n\v\f\t\r]
 
  /**** TAG/OUTPUT MODE *******************************************************/
 
-<S_OUTPUT,S_TAG>{ID} { yylval.str = yytext; return ID; }
 <S_OUTPUT,S_TAG>{space}+ ;
 
-<S_OUTPUT,S_TAG>"==" { return EQUALS; }
-<S_OUTPUT,S_TAG>"!=" { return NOT_EQUALS; }
-<S_OUTPUT,S_TAG>"<>" { return SPACESHIP; }
-<S_OUTPUT,S_TAG>"<=" { return LESS_THAN_EQUALS; }
-<S_OUTPUT,S_TAG>">=" { return GREATER_THAN_EQUALS; }
-<S_OUTPUT,S_TAG>".." { return RANGE_CTOR; }
-<S_OUTPUT,S_TAG>"<"  { return LESS_THAN; }
-<S_OUTPUT,S_TAG>">"  { return GREATER_THAN; }
-<S_OUTPUT,S_TAG>","  { return COMMA; }
-<S_OUTPUT,S_TAG>":"  { return COLON; }
-<S_OUTPUT,S_TAG>"="  { return ASSIGN; }
-<S_OUTPUT,S_TAG>"."  { return DOT; }
-<S_OUTPUT,S_TAG>"|"  { return PIPE; }
-<S_OUTPUT,S_TAG>"("  { return LPAREN; }
-<S_OUTPUT,S_TAG>")"  { return RPAREN; }
-<S_OUTPUT,S_TAG>"#"  { return HASH; }
+ /* TODO: most of these are only valid in S_TAG */
+<S_OUTPUT,S_TAG>"=="        { return EQUALS; }
+<S_OUTPUT,S_TAG>"!="        { return NOT_EQUALS; }
+<S_OUTPUT,S_TAG>"<>"        { return SPACESHIP; }
+<S_OUTPUT,S_TAG>"<="        { return LESS_THAN_EQUALS; }
+<S_OUTPUT,S_TAG>">="        { return GREATER_THAN_EQUALS; }
+<S_OUTPUT,S_TAG>".."        { return RANGE_CTOR; }
+<S_OUTPUT,S_TAG>"<"         { return LESS_THAN; }
+<S_OUTPUT,S_TAG>">"         { return GREATER_THAN; }
+<S_OUTPUT,S_TAG>","         { return COMMA; }
+<S_OUTPUT,S_TAG>":"         { return COLON; }
+<S_OUTPUT,S_TAG>"="         { return SET; }
+<S_OUTPUT,S_TAG>"."         { return DOT; }
+<S_OUTPUT,S_TAG>"|"         { return PIPE; }
+<S_OUTPUT,S_TAG>"("         { return LPAREN; }
+<S_OUTPUT,S_TAG>")"         { return RPAREN; }
+<S_OUTPUT,S_TAG>"#"         { return HASH; }
+<S_OUTPUT,S_TAG>if          { return IF; }
+<S_OUTPUT,S_TAG>endif       { return ENDIF; }
+<S_OUTPUT,S_TAG>elsif       { return ELSIF; }
+<S_OUTPUT,S_TAG>else        { return ELSE; }
+<S_OUTPUT,S_TAG>unless      { return UNLESS; }
+<S_OUTPUT,S_TAG>endunless   { return ENDUNLESS; }
+<S_OUTPUT,S_TAG>case        { return CASE; }
+<S_OUTPUT,S_TAG>endcase     { return ENDCASE; }
+<S_OUTPUT,S_TAG>form        { return FORM; }
+<S_OUTPUT,S_TAG>endform     { return ENDFORM; }
+<S_OUTPUT,S_TAG>style       { return STYLE; }
+<S_OUTPUT,S_TAG>endstyle    { return ENDSTYLE; }
+<S_OUTPUT,S_TAG>for         { return FOR; }
+<S_OUTPUT,S_TAG>endfor      { return ENDFOR; }
+<S_OUTPUT,S_TAG>break       { return BREAK; }
+<S_OUTPUT,S_TAG>continue    { return CONTINUE; }
+<S_OUTPUT,S_TAG>cycle       { return CYCLE; }
+<S_OUTPUT,S_TAG>tablerow    { return TABLEROW; }
+<S_OUTPUT,S_TAG>endtablerow { return ENDTABLEROW; }
+<S_OUTPUT,S_TAG>paginate    { return PAGINATE; }
+<S_OUTPUT,S_TAG>endpaginate { return ENDPAGINATE; }
+<S_OUTPUT,S_TAG>echo        { return S_ECHO; }
+<S_OUTPUT,S_TAG>liquid      { return LIQUID; }
+<S_OUTPUT,S_TAG>include     { return INCLUDE; }
+<S_OUTPUT,S_TAG>layout      { return LAYOUT; }
+<S_OUTPUT,S_TAG>render      { return RENDER; }
+<S_OUTPUT,S_TAG>section     { return SECTION; }
+<S_OUTPUT,S_TAG>assign      { return ASSIGN; }
+<S_OUTPUT,S_TAG>capture     { return CAPTURE; }
+<S_OUTPUT,S_TAG>endcapture  { return ENDCAPTURE; }
+<S_OUTPUT,S_TAG>decrement   { return DECREMENT; }
+<S_OUTPUT,S_TAG>increment   { return INCREMENT; }
+<S_OUTPUT,S_TAG>with        { return WITH; }
+<S_OUTPUT,S_TAG>as          { return AS; }
+<S_OUTPUT,S_TAG>in          { return IN; }
+<S_OUTPUT,S_TAG>contains    { return CONTAINS; }
+<S_OUTPUT,S_TAG>empty       { return EMPTY; }
+<S_OUTPUT,S_TAG>blank       { return BLANK; }
+<S_OUTPUT,S_TAG>nil         { return NONE; }
+<S_OUTPUT,S_TAG>none        { return NIL; }
+<S_OUTPUT,S_TAG>when        { return WHEN; }
+<S_OUTPUT,S_TAG>by          { return BY; }
+<S_OUTPUT,S_TAG>or          { return OR; }
+<S_OUTPUT,S_TAG>and         { return AND; }
+<S_OUTPUT,S_TAG>true        { return TRUE; }
+<S_OUTPUT,S_TAG>false       { return FALSE; }
 
+<S_OUTPUT,S_TAG>{int}   { yylval.ival = atoi(yytext); return INT; }
+<S_OUTPUT,S_TAG>{float} { yylval.dval = atof(yytext); return FLOAT; }
+<S_OUTPUT,S_TAG>{ID}    { yylval.str = yytext; return ID; }
+ /* TODO: interpret correctly */
 <S_OUTPUT,S_TAG>\"[^"\n]*\" |
 <S_OUTPUT,S_TAG>'[^'\n]*'   {
                         yylval.str = yytext;
