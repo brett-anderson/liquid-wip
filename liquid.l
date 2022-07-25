@@ -1,4 +1,4 @@
-/* %option debug */
+%option debug
 
 %{
 #include <ctype.h>
@@ -7,7 +7,7 @@
 #include "liquid.tab.h"
 
 bool ll_init = true;
-void yyerror(char *msg);
+void bail(char *msg);
 %}
 
 /* Initial state, where text is literally copied to output until we encounter
@@ -207,6 +207,14 @@ space   [ \n\v\f\t\r]
 
  /**** GENERIC ***************************************************************/
 
-.                    { yyerror("unhandled character in input"); }
+.                    { bail("unhandled character in input"); }
+<<EOF>>              ;
+
 
 %%
+
+// TODO: use yyerror
+void bail(char *msg) {
+  fprintf(stderr, "%s\n", msg);
+  exit(1);
+}

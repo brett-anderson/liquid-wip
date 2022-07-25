@@ -5,31 +5,62 @@
  * level.
  */
 
+#define nd_int u1._int
+#define nd_bool u1._bool
+#define nd_double u1._double
+#define nd_string u1.str
+
+/* if/unless */
+#define nd_cond u1.node
+#define nd_then u2.node
+#define nd_else u3.node
+
+/* assign, filter args */
+#define nd_name u1.str
+#define nd_val u2.node
+#define nd_nextarg u3.node
+
+/* member */
+#define nd_left u1.node
+#define nd_member_name u2.str
+
+/* filter */
+#define nd_filter_input u1.node
+#define nd_filter_name u2.str
+#define nd_filter_args u3.node
+
 enum node_type_t {
-  nt_text = 0,
-  nt_string = 1,
-  nt_id = 2,
-  nt_int = 3,
-  nt_float = 4,
-  nt_bool = 5,
+  NODE_TEXT = 0,
+  NODE_STRING = 1,
+  NODE_ID = 2,
+  NODE_INT = 3,
+  NODE_FLOAT = 4,
+  NODE_BOOL = 5,
+  NODE_MEMBER = 6,
+  NODE_IF = 7,
+  NODE_ASSIGN = 8,
+  NODE_FILTER = 9,
+  NODE_ARG = 10,
 };
 
 struct node {
   enum node_type_t node_type;
-  struct node **children;
-  union as {
+  union u1 {
     int _int;
     bool _bool;
     double _double;
     char *str;
-    void *ptr;
-  } as;
+    struct node *node;
+  } u1;
+  union u2 {
+    char *str;
+    struct node *node;
+  } u2;
+  union u3 {
+    struct node *node;
+  } u3;
 };
 typedef struct node node;
-
-node new_node0(enum node_type_t type);
-node new_node1(enum node_type_t type, node *child0);
-node new_node2(enum node_type_t type, node *child0, node *child1);
 
 node *new_int_node(int val);
 node *new_float_node(double val);
@@ -37,5 +68,10 @@ node *new_text_node(char *val);
 node *new_bool_node(bool val);
 node *new_id_node(char *val);
 node *new_string_node(char *val);
+node *new_member_node(node *left, node *right);
+node *new_if_node(node *cond, node *then, node *else_);
+node *new_filter_node(node *input, node *name);
+
+node *add_arg_to_filter(node *filter, node *argname, node *argval);
 
 void free_ast(node *ast);

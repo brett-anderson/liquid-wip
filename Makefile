@@ -1,7 +1,7 @@
 LEX    = flex
 YACC   = bison
 CC     = cc
-CFLAGS = -DYYDEBUG=1 -Werror
+CFLAGS = -DYYDEBUG=1 -Werror -O0 -g
 LFLAGS = -ll -ly -lm
 
 liquid-parser: lex.yy.o liquid.tab.o
@@ -11,7 +11,7 @@ lex.yy.c: liquid.l liquid.tab.h
 	$(LEX) $<
 
 %.tab.c %.tab.h: %.y %.h
-	$(YACC) -d $<
+	$(YACC) -Wcounterexamples -d $<
 
 lex.yy.o: liquid.tab.h
 
