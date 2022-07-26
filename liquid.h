@@ -60,6 +60,12 @@ enum node_type_t {
   NODE_ARGNAME = 12,
   NODE_ECHO = 13,
   NODE_INDEXATION = 14,
+  NODE_INCREMENT = 15,
+  NODE_DECREMENT = 16,
+  NODE_INCLUDE = 17,
+  NODE_NONE = 18,
+  NODE_EMPTY = 19,
+  NODE_BLANK = 20,
 };
 
 struct node {
@@ -94,8 +100,16 @@ node *new_filter_node(node *input, node *name);
 node *new_argname_node(char *val);
 node *new_echo_node(node *content);
 node *new_indexation_node(node *left, node *index);
+node *new_assign_node(node *id, node *fexpr);
+node *new_increment_node(node *id);
+node *new_decrement_node(node *id);
+node *new_include_node(node *name);
+node *new_none_node();
+node *new_empty_node();
+node *new_blank_node();
 
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
+node *new_exprs_node();
 node *add_expr_to_exprs(node *exprs, node *expr);
 
 void free_ast(node *ast);

@@ -12,6 +12,9 @@ void dump_filter(node *n, int indent);
 void dump_member(node *n, int indent);
 void dump_echo(node *n, int indent);
 void dump_indexation(node *n, int indent);
+void dump_assign(node *n, int indent);
+void dump_include(node *n, int indent);
+void dump_bool(node *n, int indent);
 char *escape(char *buffer);
 
 void dump(node *n) {
@@ -36,7 +39,7 @@ void dump_indent(node *n, int indent) {
 			printf("%*s(FLOAT) %f\n", indent, "", n->nd_double);
 			break;
 		case NODE_BOOL:
-			printf("%*s%s\n", indent, "", "<BOOL>");
+			dump_bool(n, indent);
 			break;
 		case NODE_MEMBER:
 			dump_member(n, indent);
@@ -45,7 +48,7 @@ void dump_indent(node *n, int indent) {
 			printf("%*s%s\n", indent, "", "<IF>");
 			break;
 		case NODE_ASSIGN:
-			printf("%*s%s\n", indent, "", "<ASSIGN>");
+			dump_assign(n, indent);
 			break;
 		case NODE_FILTER:
 			dump_filter(n, indent);
@@ -64,6 +67,24 @@ void dump_indent(node *n, int indent) {
 			break;
 		case NODE_INDEXATION:
 			dump_indexation(n, indent);
+			break;
+		case NODE_INCREMENT:
+			printf("%*sIncrement (%s)\n", indent, "", n->nd_name);
+			break;
+		case NODE_DECREMENT:
+			printf("%*sDecrement (%s)\n", indent, "", n->nd_name);
+			break;
+		case NODE_INCLUDE:
+			dump_include(n, indent);
+			break;
+		case NODE_NONE:
+			printf("%*s<none>\n", indent, "");
+			break;
+		case NODE_EMPTY:
+			printf("%*s<empty>\n", indent, "");
+			break;
+		case NODE_BLANK:
+			printf("%*s<blank>\n", indent, "");
 			break;
 		default:
 			yyerror("dump not written for node type!");
@@ -113,6 +134,24 @@ void dump_indexation(node *n, int indent) {
 	dump_indent(n->nd_left, indent + 4);
 	printf("%*sIndex:\n", indent + 2, "");
 	dump_indent(n->nd_index, indent + 4);
+}
+
+void dump_assign(node *n, int indent) {
+	printf("%*sAssign (%s):\n", indent, "", n->nd_name);
+	dump_indent(n->nd_val, indent + 2);
+}
+
+void dump_include(node *n, int indent) {
+	printf("%*sInclude:\n", indent, "");
+	dump_indent(n->nd_expr1, indent + 2);
+}
+
+void dump_bool(node *n, int indent) {
+	if (n->nd_bool) {
+		printf("%*s<true>\n", indent, "");
+	} else {
+		printf("%*s<false>\n", indent, "");
+	}
 }
 
 void dump_filter(node *n, int indent) {

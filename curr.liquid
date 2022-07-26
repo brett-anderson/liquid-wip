@@ -1,4 +1,8 @@
 {% assign a = 3 %}
-{{ 2 }} words go here and then
+{% echo a %}
+{% include 'product' %}
+{{- none }}{{ empty }}{{true}}{{false}}{{ blank -}}
+{% liquid assign a = 3 increment a decrement a echo a %}
+{{ 2 }}{{ a }}words go here and then
 {{- neato.woop[2].a | upcase thing: 'because', wat: 3.1415 | things wtf: "ASDF", q: "q", w: "w" }}
 {{ 42 }}

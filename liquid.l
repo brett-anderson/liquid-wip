@@ -77,7 +77,7 @@ space   [ \n\v\f\t\r]
 <S_TEXT>"{%"-?{space}*"comment"{space}*-?"%}" { BEGIN S_COMMENT; }
 
 <S_TEXT>"{{"-?       { BEGIN S_OUTPUT; return BEGIN_OUTPUT; }
-<S_TEXT>"{%"-?       { BEGIN S_TAG; }
+<S_TEXT>"{%"-?       { BEGIN S_TAG;    return BEGIN_TAG;    }
 
  /* Leading whitespace trimming:
     When we see {%- or {{- in TEXT state, trim all the trailing spaces from the
@@ -98,12 +98,12 @@ space   [ \n\v\f\t\r]
                      }
 
 <S_OUTPUT>"}}"       { BEGIN S_TEXT; return END_OUTPUT; }
-<S_TAG>"%}"          { BEGIN S_TEXT; }
+<S_TAG>"%}"          { BEGIN S_TEXT; return END_TAG;    }
 
  /* -}} and -%} don't go directly back to TEXT; they first go to an EAT_WS
   * state that drops leading spaces before returning to TEXT */
 <S_OUTPUT>"-}}"      { BEGIN S_EAT_WS; return END_OUTPUT; }
-<S_TAG>"-%}"         { BEGIN S_EAT_WS; }
+<S_TAG>"-%}"         { BEGIN S_EAT_WS; return END_TAG;    }
 
  /* Comments are dropped here in the lexer: they don't make it to the parser.
   */
@@ -188,7 +188,7 @@ space   [ \n\v\f\t\r]
 <S_OUTPUT,S_TAG>empty       { return EMPTY; }
 <S_OUTPUT,S_TAG>blank       { return BLANK; }
 <S_OUTPUT,S_TAG>nil         { return NONE; }
-<S_OUTPUT,S_TAG>none        { return NIL; }
+<S_OUTPUT,S_TAG>none        { return NONE; }
 <S_OUTPUT,S_TAG>when        { return WHEN; }
 <S_OUTPUT,S_TAG>by          { return BY; }
 <S_OUTPUT,S_TAG>or          { return OR; }

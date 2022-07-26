@@ -51,14 +51,14 @@ ENDPAGINATE
 %token ASSIGN CAPTURE ENDCAPTURE DECREMENT INCREMENT
 
 /* Other syntax */
-%token WITH AS IN CONTAINS EMPTY BLANK NIL NONE WHEN BY OR AND TRUE FALSE
+%token WITH AS IN CONTAINS EMPTY BLANK NONE WHEN BY OR AND TRUE FALSE
 
 /* Misc */
-%token BEGIN_OUTPUT END_OUTPUT
+%token BEGIN_OUTPUT END_OUTPUT BEGIN_TAG END_TAG
 
-%type <ast> int float text id string bool member filter expr
-  literal unfiltered_expr exprs start argname filter0 output
-  indexation
+%type <ast> int float text id string bool member filter fexpr
+  literal expr exprs start argname filter0 output indexation texpr tag
+  liquid_texpr texpr0 texprs false true none empty blank
 
 %%
 
@@ -67,34 +67,81 @@ start:
 ;
 
 exprs:
-  expr                       { $$ = add_expr_to_exprs(NULL, $1); }
-| exprs expr                 { $$ = add_expr_to_exprs($1, $2); }
-;
-
-bool:
-  TRUE                       { $$ = new_bool_node(true); }
-| FALSE                      { $$ = new_bool_node(false); }
+  %empty                     { $$ = new_exprs_node(); }
+| exprs fexpr                { $$ = add_expr_to_exprs($1, $2); }
 ;
 
 filter0:
-  expr '|' id               { $$ = new_filter_node($1, $3); }
+  fexpr '|' id               { $$ = new_filter_node($1, $3); }
 ;
 
 filter:
-  filter0 argname unfiltered_expr    { $$ = add_arg_to_filter($1, $2, $3); }
-| filter ',' argname unfiltered_expr { $$ = add_arg_to_filter($1, $3, $4); }
+  filter0 argname expr       { $$ = add_arg_to_filter($1, $2, $3); }
+| filter ',' argname expr    { $$ = add_arg_to_filter($1, $3, $4); }
 ;
 
 member:
-  unfiltered_expr '.' id     { $$ = new_member_node($1, $3); }
+  expr '.' id                { $$ = new_member_node($1, $3); }
 ;
 
 indexation:
-  unfiltered_expr '[' unfiltered_expr ']' { $$ = new_indexation_node($1, $3); }
+  expr '[' expr ']'          { $$ = new_indexation_node($1, $3); }
 ;
 
 output:
-  BEGIN_OUTPUT expr END_OUTPUT { $$ = new_echo_node($2); }
+  BEGIN_OUTPUT fexpr END_OUTPUT { $$ = new_echo_node($2); }
+;
+
+tag:
+  BEGIN_TAG texpr END_TAG    { $$ = $2; }
+;
+
+texpr: /* _T_ag expression: contents of a {% %} */
+  texpr0
+| liquid_texpr
+;
+
+texpr0:
+  ASSIGN id '=' fexpr        { $$ = new_assign_node($2, $4); }
+| S_ECHO fexpr               { $$ = new_echo_node($2); }
+| INCREMENT id               { $$ = new_increment_node($2); }
+| DECREMENT id               { $$ = new_decrement_node($2); }
+| INCLUDE expr               { $$ = new_include_node($2); }
+/* | IF */
+/* | UNLESS */
+/* | CASE */
+/* | FORM */
+/* | STYLE */
+/* | FOR */
+/* | CYCLE */
+/* | TABLEROW */
+/* | PAGINATE */
+/* | LAYOUT */
+/* | SECTION */
+/* | CAPTURE */
+;
+
+texprs:
+  %empty                     { $$ = new_exprs_node(); }
+| texprs texpr0              { $$ = add_expr_to_exprs($1, $2); }
+;
+
+liquid_texpr:
+  LIQUID texprs              { $$ = $2; }
+;
+
+fexpr: /* (maybe) _F_iltered expr */
+  expr
+| filter
+| output
+;
+
+expr:
+  member
+| indexation
+| literal
+| id
+| tag
 ;
 
 literal:
@@ -102,28 +149,28 @@ literal:
 | float
 | string
 | text
-| bool /* NIL NONE EMPTY BLANK ? */
+| bool
+| none
+| empty
+| blank
 ;
 
-unfiltered_expr:
-  member
-| indexation
-| literal
-| id
-;
-
-expr:
-  unfiltered_expr
-| filter
-| output
+bool:
+  true
+| false
 ;
 
 int:     INT     { $$ = new_int_node($1);     } ;
 float:   FLOAT   { $$ = new_float_node($1);   } ;
 text:    TEXT    { $$ = new_text_node($1);    } ;
 id:      ID      { $$ = new_id_node($1);      } ;
-argname: ARGNAME { $$ = new_argname_node($1); } ;
 string:  STRING  { $$ = new_string_node($1);  } ;
+argname: ARGNAME { $$ = new_argname_node($1); } ;
+none:    NONE    { $$ = new_none_node();      } ;
+true:    TRUE    { $$ = new_bool_node(true);  } ;
+false:   FALSE   { $$ = new_bool_node(false); } ;
+empty:   EMPTY   { $$ = new_empty_node();     } ;
+blank:   BLANK   { $$ = new_blank_node();     } ;
 
 %%
 
@@ -204,14 +251,6 @@ node *new_if_node(node *cond, node *then, node *else_) {
   return node;
 }
 
-node *new_assign_node(node *left, node *right) {
-  node *node = setup_node(NODE_IF);
-  /* TODO: assert compatible type */
-  node->nd_name = left->nd_string;
-  node->nd_val = right;
-  return node;
-}
-
 node *new_filter_node(node *input, node *name) {
   node *node = setup_node(NODE_FILTER);
   node->nd_filter_input = input;
@@ -274,5 +313,45 @@ node *new_indexation_node(node *left, node *index) {
   node *node = setup_node(NODE_INDEXATION);
   node->nd_left = left;
   node->nd_index = index;
+  return node;
+}
+
+node *new_assign_node(node *id, node *fexpr) {
+  node *node = setup_node(NODE_ASSIGN);
+  node->nd_name = id->nd_string;
+  node->nd_val = fexpr;
+  return node;
+}
+
+node *new_increment_node(node *id) {
+  node *node = setup_node(NODE_INCREMENT);
+  node->nd_name = id->nd_string;
+  return node;
+}
+
+node *new_decrement_node(node *id) {
+  node *node = setup_node(NODE_DECREMENT);
+  node->nd_name = id->nd_string;
+  return node;
+}
+
+node *new_include_node(node *name) {
+  node *node = setup_node(NODE_INCLUDE);
+  node->nd_expr1 = name;
+  return node;
+}
+
+node *new_none_node() {
+  node *node = setup_node(NODE_NONE);
+  return node;
+}
+
+node *new_empty_node() {
+  node *node = setup_node(NODE_EMPTY);
+  return node;
+}
+
+node *new_blank_node() {
+  node *node = setup_node(NODE_BLANK);
   return node;
 }
