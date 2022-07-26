@@ -9,7 +9,9 @@ void yyerror(const char *yymsgp);
 void dump_indent(node *n, int indent);
 void dump_exprs(node *n, int indent);
 void dump_filter(node *n, int indent);
+void dump_member(node *n, int indent);
 void dump_echo(node *n, int indent);
+void dump_indexation(node *n, int indent);
 char *escape(char *buffer);
 
 void dump(node *n) {
@@ -37,7 +39,7 @@ void dump_indent(node *n, int indent) {
 			printf("%*s%s\n", indent, "", "<BOOL>");
 			break;
 		case NODE_MEMBER:
-			printf("%*s%s\n", indent, "", "<MEMBER>");
+			dump_member(n, indent);
 			break;
 		case NODE_IF:
 			printf("%*s%s\n", indent, "", "<IF>");
@@ -59,6 +61,9 @@ void dump_indent(node *n, int indent) {
 			break;
 		case NODE_ECHO:
 			dump_echo(n, indent);
+			break;
+		case NODE_INDEXATION:
+			dump_indexation(n, indent);
 			break;
 		default:
 			yyerror("dump not written for node type!");
@@ -95,6 +100,19 @@ void dump_exprs(node *n, int indent) {
 void dump_echo(node *n, int indent) {
 	printf("%*s%s\n", indent, "", "Echo:");
 	dump_indent(n->nd_content, indent + 2);
+}
+
+void dump_member(node *n, int indent) {
+	printf("%*sMember '%s' of:\n", indent, "", n->nd_member_name);
+	dump_indent(n->nd_left, indent + 2);
+}
+
+void dump_indexation(node *n, int indent) {
+	printf("%*sIndexation:\n", indent, "");
+	printf("%*sOf:\n", indent + 2, "");
+	dump_indent(n->nd_left, indent + 4);
+	printf("%*sIndex:\n", indent + 2, "");
+	dump_indent(n->nd_index, indent + 4);
 }
 
 void dump_filter(node *n, int indent) {

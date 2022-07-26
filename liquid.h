@@ -40,6 +40,10 @@
 /* echo */
 #define nd_content u1.node
 
+/* indexation (nd_left = u1.node) */
+#define nd_index u2.node
+
+
 enum node_type_t {
   NODE_TEXT = 0,
   NODE_STRING = 1,
@@ -55,6 +59,7 @@ enum node_type_t {
   NODE_EXPRS = 11,
   NODE_ARGNAME = 12,
   NODE_ECHO = 13,
+  NODE_INDEXATION = 14,
 };
 
 struct node {
@@ -88,6 +93,7 @@ node *new_if_node(node *cond, node *then, node *else_);
 node *new_filter_node(node *input, node *name);
 node *new_argname_node(char *val);
 node *new_echo_node(node *content);
+node *new_indexation_node(node *left, node *index);
 
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
 node *add_expr_to_exprs(node *exprs, node *expr);

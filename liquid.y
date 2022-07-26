@@ -58,6 +58,7 @@ ENDPAGINATE
 
 %type <ast> int float text id string bool member filter expr
   literal unfiltered_expr exprs start argname filter0 output
+  indexation
 
 %%
 
@@ -85,7 +86,11 @@ filter:
 ;
 
 member:
-  id '.' id                  { $$ = new_member_node($1, $3); }
+  unfiltered_expr '.' id     { $$ = new_member_node($1, $3); }
+;
+
+indexation:
+  unfiltered_expr '[' unfiltered_expr ']' { $$ = new_indexation_node($1, $3); }
 ;
 
 output:
@@ -102,6 +107,7 @@ literal:
 
 unfiltered_expr:
   member
+| indexation
 | literal
 | id
 ;
@@ -318,5 +324,12 @@ node *add_expr_to_exprs(node *exprs, node *expr) {
 node *new_echo_node(node *content) {
   node *node = setup_node(NODE_ECHO);
   node->nd_content = content;
+  return node;
+}
+
+node *new_indexation_node(node *left, node *index) {
+  node *node = setup_node(NODE_INDEXATION);
+  node->nd_left = left;
+  node->nd_index = index;
   return node;
 }
