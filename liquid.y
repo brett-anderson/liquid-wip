@@ -6,10 +6,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include "liquid.h"
+#include "dump.h"
 
 int yylex();
 void yyerror(const char *yymsgp);
-void dump(node *n);
 
 %}
 
@@ -29,9 +29,7 @@ void dump(node *n);
 %token <dval> FLOAT
 
 /* Tag/Output mode operators, etc. */
-%token EQUALS NOT_EQUALS GREATER_THAN GREATER_THAN_EQUALS LESS_THAN
-LESS_THAN_EQUALS SPACESHIP COMMA COLON SET DOT PIPE LPAREN RPAREN
-RANGE_CTOR HASH LSQUARE RSQUARE
+%token EQUALS NOT_EQUALS GTE LTE SPACESHIP DOTDOT
 
 /* Conditional tags */
 %token IF ENDIF ELSIF ELSE UNLESS ENDUNLESS CASE ENDCASE
@@ -55,8 +53,11 @@ ENDPAGINATE
 /* Other syntax */
 %token WITH AS IN CONTAINS EMPTY BLANK NIL NONE WHEN BY OR AND TRUE FALSE
 
+/* Misc */
+%token BEGIN_OUTPUT END_OUTPUT
+
 %type <ast> int float text id string bool member filter expr
-  literal unfiltered_expr exprs start argname filter0
+  literal unfiltered_expr exprs start argname filter0 output
 
 %%
 
@@ -65,7 +66,7 @@ start:
 ;
 
 exprs:
-  %empty                     { $$ = new_exprs_node(); }
+  expr                       { $$ = add_expr_to_exprs(NULL, $1); }
 | exprs expr                 { $$ = add_expr_to_exprs($1, $2); }
 ;
 
@@ -74,41 +75,21 @@ bool:
 | FALSE                      { $$ = new_bool_node(false); }
 ;
 
-int:
-  INT                        { $$ = new_int_node($1); }
-;
-
-float:
-  FLOAT                      { $$ = new_float_node($1); }
-;
-
-text:
-  TEXT                       { $$ = new_text_node($1); }
-;
-
-id:
-  ID                         { $$ = new_id_node($1); }
-;
-
-argname:
-  ARGNAME                    { $$ = new_argname_node($1); }
-;
-
-string:
-  STRING                     { $$ = new_string_node($1); }
-;
-
 filter0:
-  expr PIPE id               { $$ = new_filter_node($1, $3); }
+  expr '|' id               { $$ = new_filter_node($1, $3); }
 ;
 
 filter:
-  filter0 argname unfiltered_expr      { $$ = add_arg_to_filter($1, $2, $3); }
-| filter COMMA argname unfiltered_expr { $$ = add_arg_to_filter($1, $3, $4); }
+  filter0 argname unfiltered_expr    { $$ = add_arg_to_filter($1, $2, $3); }
+| filter ',' argname unfiltered_expr { $$ = add_arg_to_filter($1, $3, $4); }
 ;
 
 member:
-  id DOT id                  { $$ = new_member_node($1, $3); }
+  id '.' id                  { $$ = new_member_node($1, $3); }
+;
+
+output:
+  BEGIN_OUTPUT expr END_OUTPUT { $$ = new_echo_node($2); }
 ;
 
 literal:
@@ -128,14 +109,17 @@ unfiltered_expr:
 expr:
   unfiltered_expr
 | filter
+| output
 ;
 
-%%
+int:     INT     { $$ = new_int_node($1);     } ;
+float:   FLOAT   { $$ = new_float_node($1);   } ;
+text:    TEXT    { $$ = new_text_node($1);    } ;
+id:      ID      { $$ = new_id_node($1);      } ;
+argname: ARGNAME { $$ = new_argname_node($1); } ;
+string:  STRING  { $$ = new_string_node($1);  } ;
 
-/* void yyerror(char *msg) { */
-/*   fprintf(stderr, "error: %s\n", msg); */
-/*   exit(1); */
-/* } */
+%%
 
 int main(int argc, char **argv) {
   if (argc == 2 && strcmp(argv[1], "-l") == 0) {
@@ -145,25 +129,6 @@ int main(int argc, char **argv) {
   }
   return 0;
 }
-
-/*
-text: text TEXT      { $$ = concatf("%s%s", $1, $2); }
-    | TEXT
-    ;
-char* concatf(const char* fmt, ...) {
-  va_list args;
-  char* buf = NULL;
-  va_start(args, fmt);
-  int n = vasprintf(&buf, fmt, args);
-  va_end(args);
-  if (n < 0) { free(buf); buf = NULL; }
-  return buf;
-}
-*/
-
-
-
-
 
   /*
 id: ID
@@ -215,8 +180,11 @@ id: ID
 */
 
 node *setup_node(enum node_type_t type) {
-  printf("NODE%d\n", type);
-  node *node = malloc(sizeof(node)); /* TODO check malloc */
+  node *node = calloc(1, sizeof(struct node));
+  if (node == NULL) {
+    fprintf(stderr, "malloc failed\n");
+    exit(1);
+  }
   node->node_type = type;
   return node;
 }
@@ -235,7 +203,7 @@ node *new_float_node(double val) {
 
 node *new_text_node(char *val) {
   node *node = setup_node(NODE_TEXT);
-  node->nd_string = val;
+  node->nd_string = strdup(val);
   return node;
 }
 
@@ -247,19 +215,19 @@ node *new_bool_node(bool val) {
 
 node *new_id_node(char *val) {
   node *node = setup_node(NODE_ID);
-  node->nd_string = val;
+  node->nd_string = strdup(val);
   return node;
 }
 
 node *new_argname_node(char *val) {
   node *node = setup_node(NODE_ARGNAME);
-  node->nd_string = val;
+  node->nd_string = strdup(val);
   return node;
 }
 
 node *new_string_node(char *val) {
   node *node = setup_node(NODE_STRING);
-  node->nd_string = val;
+  node->nd_string = strdup(val);
   return node;
 }
 
@@ -301,14 +269,12 @@ node *add_arg_to_filter(node *filter, node *argname, node *argval) {
   argnode->nd_val = argval;
   argnode->nd_nextarg = NULL;
 
-  /* TODO: what am I doing wrong? this is corrupting the input */
-
-  /* node *curr = filter->nd_filter_args; */
-  /* if (curr == NULL) { */
-  /*   filter->nd_filter_args = argnode; */
-  /* } else { */
-  /*   curr->nd_nextarg = argnode; */
-  /* } */
+  node *curr = filter->nd_filter_args;
+  if (curr == NULL) {
+    filter->nd_filter_args = argnode;
+  } else {
+    curr->nd_nextarg = argnode;
+  }
 
   return filter;
 }
@@ -322,6 +288,13 @@ node *new_exprs_node() {
 }
 
 node *add_expr_to_exprs(node *exprs, node *expr) {
+  if (exprs == NULL) {
+    exprs = setup_node(NODE_EXPRS);
+    exprs->nd_expr1 = NULL;
+    exprs->nd_expr2 = NULL;
+    exprs->nd_expr_rest = NULL;
+  }
+
   if (exprs->nd_expr1 == NULL) {
     exprs->nd_expr1 = expr;
   } else if (exprs->nd_expr2 == NULL) {
@@ -332,8 +305,8 @@ node *add_expr_to_exprs(node *exprs, node *expr) {
       exprs->nd_expr_rest = calloc(16, sizeof(void*));
     }
     for (int i = 0; i < 16; i++) {
-      if (exprs->nd_expr_rest != NULL) {
-        exprs->nd_expr_rest = &expr;
+      if (exprs->nd_expr_rest[i] == NULL) {
+        exprs->nd_expr_rest[i] = expr;
         return exprs;
       }
     }
@@ -342,119 +315,8 @@ node *add_expr_to_exprs(node *exprs, node *expr) {
   return exprs;
 }
 
-void dump(node *n) {
-  switch (n->node_type) {
-  case NODE_TEXT:
-    printf("REALTEXT\n");
-    break;
-  case NODE_STRING:
-    printf("TEXT\n");
-    break;
-  case NODE_ID:
-    printf("TEXT\n");
-    break;
-  case NODE_INT:
-    printf("TEXT\n");
-    break;
-  case NODE_FLOAT:
-    printf("TEXT\n");
-    break;
-  case NODE_BOOL:
-    printf("TEXT\n");
-    break;
-  case NODE_MEMBER:
-    printf("TEXT\n");
-    break;
-  case NODE_IF:
-    printf("TEXT\n");
-    break;
-  case NODE_ASSIGN:
-    printf("TEXT\n");
-    break;
-  case NODE_FILTER:
-    printf("FILTER\n");
-    break;
-  case NODE_ARG:
-    printf("ARG\n");
-    break;
-  case NODE_EXPRS:
-    printf("EXPRS\n");
-    break;
-  default:
-    break;
-  }
+node *new_echo_node(node *content) {
+  node *node = setup_node(NODE_ECHO);
+  node->nd_content = content;
+  return node;
 }
-
-    /* /1* debg: %empty *1/ */
-    /* /1* | debg text                { printf("TEXT:   `%s`\n", $2->nd_string); } *1/ */
-    /* /1* | debg string              { printf("STRING: `%s`\n", $2->nd_string); } *1/ */
-    /* /1* | debg id                  { printf("ID:     %s\n", $2->nd_string); } *1/ */
-    /* /1* | debg int                 { printf("INT:    %d\n", $2->nd_int); } *1/ */
-    /* /1* | debg float               { printf("FLOAT:  %f\n", $2->nd_double); } *1/ */
-    /* /1* | debg bool                { printf("BOOL:   %d\n", $2->nd_bool); } *1/ */
-    /* /1* | debg member              { printf("MEMB:   (%p)\n", $2->u1.node); } *1/ */
-    /* /1* | debg filter              { printf("FILTER: (%p)\n", $2->u1.node); } *1/ */
-    /* /1* | debg EQUALS              { printf("EQUALS\n"); } *1/ */
-    /* /1* | debg NOT_EQUALS          { printf("NOT_EQUALS\n"); } *1/ */
-    /* /1* | debg GREATER_THAN        { printf("GREATER_THAN\n"); } *1/ */
-    /* /1* | debg GREATER_THAN_EQUALS { printf("GREATER_THAN_EQUALS\n"); } *1/ */
-    /* /1* | debg LESS_THAN           { printf("LESS_THAN\n"); } *1/ */
-    /* /1* | debg LESS_THAN_EQUALS    { printf("LESS_THAN_EQUALS\n"); } *1/ */
-    /* /1* | debg SPACESHIP           { printf("SPACESHIP\n"); } *1/ */
-    /* /1* | debg COMMA               { printf("COMMA\n"); } *1/ */
-    /* /1* | debg COLON               { printf("COLON\n"); } *1/ */
-    /* /1* | debg SET                 { printf("SET\n"); } *1/ */
-    /* /1* | debg DOT                 { printf("DOT\n"); } *1/ */
-    /* /1* | debg PIPE                { printf("PIPE\n"); } *1/ */
-    /* /1* | debg LPAREN              { printf("LPAREN\n"); } *1/ */
-    /* /1* | debg RPAREN              { printf("RPAREN\n"); } *1/ */
-    /* /1* | debg LSQUARE             { printf("LSQUARE\n"); } *1/ */
-    /* /1* | debg RSQUARE             { printf("RSQUARE\n"); } *1/ */
-    /* /1* | debg RANGE_CTOR          { printf("RANGE_CTOR\n"); } *1/ */
-    /* /1* | debg HASH                { printf("HASH\n"); } *1/ */
-    /* /1* | debg IF                  { printf("IF\n"); } *1/ */
-    /* /1* | debg ENDIF               { printf("ENDIF\n"); } *1/ */
-    /* /1* | debg ELSIF               { printf("ELSIF\n"); } *1/ */
-    /* /1* | debg ELSE                { printf("ELSE\n"); } *1/ */
-    /* /1* | debg UNLESS              { printf("UNLESS\n"); } *1/ */
-    /* /1* | debg ENDUNLESS           { printf("ENDUNLESS\n"); } *1/ */
-    /* /1* | debg CASE                { printf("CASE\n"); } *1/ */
-    /* /1* | debg ENDCASE             { printf("ENDCASE\n"); } *1/ */
-    /* /1* | debg FORM                { printf("FORM\n"); } *1/ */
-    /* /1* | debg ENDFORM             { printf("ENDFORM\n"); } *1/ */
-    /* /1* | debg STYLE               { printf("STYLE\n"); } *1/ */
-    /* /1* | debg ENDSTYLE            { printf("ENDSTYLE\n"); } *1/ */
-    /* /1* | debg FOR                 { printf("FOR\n"); } *1/ */
-    /* /1* | debg ENDFOR              { printf("ENDFOR\n"); } *1/ */
-    /* /1* | debg BREAK               { printf("BREAK\n"); } *1/ */
-    /* /1* | debg CONTINUE            { printf("CONTINUE\n"); } *1/ */
-    /* /1* | debg CYCLE               { printf("CYCLE\n"); } *1/ */
-    /* /1* | debg TABLEROW            { printf("TABLEROW\n"); } *1/ */
-    /* /1* | debg ENDTABLEROW         { printf("ENDTABLEROW\n"); } *1/ */
-    /* /1* | debg PAGINATE            { printf("PAGINATE\n"); } *1/ */
-    /* /1* | debg ENDPAGINATE         { printf("ENDPAGINATE\n"); } *1/ */
-    /* /1* | debg S_ECHO              { printf("ECHO\n"); } *1/ */
-    /* /1* | debg LIQUID              { printf("LIQUID\n"); } *1/ */
-    /* /1* | debg INCLUDE             { printf("INCLUDE\n"); } *1/ */
-    /* /1* | debg LAYOUT              { printf("LAYOUT\n"); } *1/ */
-    /* /1* | debg RENDER              { printf("RENDER\n"); } *1/ */
-    /* /1* | debg SECTION             { printf("SECTION\n"); } *1/ */
-    /* /1* | debg ASSIGN              { printf("ASSIGN\n"); } *1/ */
-    /* /1* | debg CAPTURE             { printf("CAPTURE\n"); } *1/ */
-    /* /1* | debg ENDCAPTURE          { printf("ENDCAPTURE\n"); } *1/ */
-    /* /1* | debg DECREMENT           { printf("DECREMENT\n"); } *1/ */
-    /* /1* | debg INCREMENT           { printf("INCREMENT\n"); } *1/ */
-    /* /1* | debg WITH                { printf("WITH\n"); } *1/ */
-    /* /1* | debg AS                  { printf("AS\n"); } *1/ */
-    /* /1* | debg IN                  { printf("IN\n"); } *1/ */
-    /* /1* | debg CONTAINS            { printf("CONTAINS\n"); } *1/ */
-    /* /1* | debg EMPTY               { printf("EMPTY\n"); } *1/ */
-    /* /1* | debg BLANK               { printf("BLANK\n"); } *1/ */
-    /* /1* | debg NIL                 { printf("NIL\n"); } *1/ */
-    /* /1* | debg NONE                { printf("NONE\n"); } *1/ */
-    /* /1* | debg WHEN                { printf("WHEN\n"); } *1/ */
-    /* /1* | debg BY                  { printf("BY\n"); } *1/ */
-    /* /1* | debg OR                  { printf("OR\n"); } *1/ */
-    /* /1* | debg AND                 { printf("AND\n"); } *1/ */
-    /* ; */
-

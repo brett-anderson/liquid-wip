@@ -1,4 +1,4 @@
-%option debug
+/* %option debug */
 
 %{
 #include <ctype.h>
@@ -76,7 +76,7 @@ space   [ \n\v\f\t\r]
 <S_TEXT>"{%"-?{space}*"raw"{space}*-?"%}"     { BEGIN S_RAW; }
 <S_TEXT>"{%"-?{space}*"comment"{space}*-?"%}" { BEGIN S_COMMENT; }
 
-<S_TEXT>"{{"-?       { BEGIN S_OUTPUT; }
+<S_TEXT>"{{"-?       { BEGIN S_OUTPUT; return BEGIN_OUTPUT; }
 <S_TEXT>"{%"-?       { BEGIN S_TAG; }
 
  /* Leading whitespace trimming:
@@ -97,12 +97,12 @@ space   [ \n\v\f\t\r]
                        return TEXT;
                      }
 
-<S_OUTPUT>"}}"       { BEGIN S_TEXT; }
+<S_OUTPUT>"}}"       { BEGIN S_TEXT; return END_OUTPUT; }
 <S_TAG>"%}"          { BEGIN S_TEXT; }
 
  /* -}} and -%} don't go directly back to TEXT; they first go to an EAT_WS
   * state that drops leading spaces before returning to TEXT */
-<S_OUTPUT>"-}}"      { BEGIN S_EAT_WS; }
+<S_OUTPUT>"-}}"      { BEGIN S_EAT_WS; return END_OUTPUT; }
 <S_TAG>"-%}"         { BEGIN S_EAT_WS; }
 
  /* Comments are dropped here in the lexer: they don't make it to the parser.
@@ -135,21 +135,20 @@ space   [ \n\v\f\t\r]
 <S_OUTPUT,S_TAG>"=="        { return EQUALS; }
 <S_OUTPUT,S_TAG>"!="        { return NOT_EQUALS; }
 <S_OUTPUT,S_TAG>"<>"        { return SPACESHIP; }
-<S_OUTPUT,S_TAG>"<="        { return LESS_THAN_EQUALS; }
-<S_OUTPUT,S_TAG>">="        { return GREATER_THAN_EQUALS; }
-<S_OUTPUT,S_TAG>".."        { return RANGE_CTOR; }
-<S_OUTPUT,S_TAG>"<"         { return LESS_THAN; }
-<S_OUTPUT,S_TAG>">"         { return GREATER_THAN; }
-<S_OUTPUT,S_TAG>","         { return COMMA; }
-<S_OUTPUT,S_TAG>":"         { return COLON; }
-<S_OUTPUT,S_TAG>"="         { return SET; }
-<S_OUTPUT,S_TAG>"."         { return DOT; }
-<S_OUTPUT,S_TAG>"|"         { return PIPE; }
-<S_OUTPUT,S_TAG>"("         { return LPAREN; }
-<S_OUTPUT,S_TAG>")"         { return RPAREN; }
-<S_OUTPUT,S_TAG>"["         { return LSQUARE; }
-<S_OUTPUT,S_TAG>"]"         { return RSQUARE; }
-<S_OUTPUT,S_TAG>"#"         { return HASH; }
+<S_OUTPUT,S_TAG>"<="        { return LTE; }
+<S_OUTPUT,S_TAG>">="        { return GTE; }
+<S_OUTPUT,S_TAG>".."        { return DOTDOT; }
+<S_OUTPUT,S_TAG>"<"         { return '<'; }
+<S_OUTPUT,S_TAG>">"         { return '>'; }
+<S_OUTPUT,S_TAG>","         { return ','; }
+<S_OUTPUT,S_TAG>"="         { return '='; }
+<S_OUTPUT,S_TAG>"."         { return '.'; }
+<S_OUTPUT,S_TAG>"|"         { return '|'; }
+<S_OUTPUT,S_TAG>"("         { return '('; }
+<S_OUTPUT,S_TAG>")"         { return ')'; }
+<S_OUTPUT,S_TAG>"["         { return '['; }
+<S_OUTPUT,S_TAG>"]"         { return ']'; }
+<S_OUTPUT,S_TAG>"#"         { return '#'; }
 <S_OUTPUT,S_TAG>if          { return IF; }
 <S_OUTPUT,S_TAG>endif       { return ENDIF; }
 <S_OUTPUT,S_TAG>elsif       { return ELSIF; }
