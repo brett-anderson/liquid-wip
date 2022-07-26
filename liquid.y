@@ -10,6 +10,7 @@
 
 int yylex();
 void yyerror(const char *yymsgp);
+extern int yydebug;
 
 %}
 
@@ -58,7 +59,7 @@ ENDPAGINATE
 
 %type <ast> int float text id string bool member filter fexpr
   literal expr exprs start argname filter0 output indexation texpr tag
-  liquid_texpr texpr0 texprs false true none empty blank
+  liquid_texpr texpr0 texprs false true none empty blank arglist arglist0
 
 %%
 
@@ -87,7 +88,21 @@ output:
 tag:
   BEGIN_TAG texpr END_TAG    { $$ = $2; }
 | BEGIN_TAG STYLE END_TAG exprs endstyle { $$ = new_style_node($4); }
+| BEGIN_TAG CAPTURE id END_TAG exprs endcapture { $$ = new_capture_node($3, $5); }
+| BEGIN_TAG CYCLE argname arglist END_TAG { $$ = new_cycle_node($3, $4); }
+| BEGIN_TAG CYCLE arglist END_TAG { $$ = new_cycle_node(NULL, $3); }
 ;
+
+arglist:
+  %empty                     { $$ = NULL; }
+| arglist0
+;
+
+arglist0:
+  expr                       { $$ = add_expr_to_exprs(NULL, $1); }
+| arglist0 ',' expr          { $$ = add_expr_to_exprs($1, $3); }
+;
+
 
 texpr: /* _T_ag expression: contents of a {% %} */
   texpr0
@@ -96,6 +111,10 @@ texpr: /* _T_ag expression: contents of a {% %} */
 
 endstyle:
   BEGIN_TAG ENDSTYLE END_TAG
+;
+
+endcapture:
+  BEGIN_TAG ENDCAPTURE END_TAG
 ;
 
 texpr0:
@@ -110,12 +129,10 @@ texpr0:
 /* | UNLESS */
 /* | CASE */
 /* | FORM */
-/* | STYLE */
 /* | FOR */
 /* | CYCLE */
 /* | TABLEROW */
 /* | PAGINATE */
-/* | CAPTURE */
 ;
 
 texprs:
@@ -182,6 +199,9 @@ blank:   BLANK   { $$ = new_blank_node();     } ;
 int main(int argc, char **argv) {
   if (argc == 2 && strcmp(argv[1], "-l") == 0) {
     while (yylex() != 0);
+  } else if (argc == 2 && strcmp(argv[1], "-d") == 0) {
+    yydebug=1;
+    yyparse();
   } else {
     yyparse();
   }
@@ -379,3 +399,18 @@ node *new_style_node(node *exprs) {
   return node;
 }
 
+node *new_capture_node(node *varname, node *exprs) {
+  node *node = setup_node(NODE_CAPTURE);
+  node->nd_string = varname->nd_string;
+  node->nd_expr2 = exprs;
+  return node;
+}
+
+node *new_cycle_node(node *groupname, node *items) {
+  node *node = setup_node(NODE_CYCLE);
+  if (groupname != NULL) {
+    node->nd_groupname = groupname->nd_string;
+  }
+  node->nd_items = items;
+  return node;
+}

@@ -43,6 +43,9 @@
 /* indexation (nd_left = u1.node) */
 #define nd_index u2.node
 
+/* cycle */
+#define nd_groupname u1.str
+#define nd_items u2.node
 
 enum node_type_t {
   NODE_TEXT = 0,
@@ -69,6 +72,8 @@ enum node_type_t {
   NODE_LAYOUT = 21,
   NODE_SECTION = 22,
   NODE_STYLE = 23,
+  NODE_CAPTURE = 24,
+  NODE_CYCLE = 25,
 };
 
 struct node {
@@ -113,10 +118,13 @@ node *new_blank_node();
 node *new_layout_node(node *arg);
 node *new_section_node(node *arg);
 node *new_style_node(node *exprs);
+node *new_capture_node(node *varname, node *exprs);
+node *new_cycle_node(node *groupname, node *arglist);
 
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
 node *new_exprs_node();
 node *add_expr_to_exprs(node *exprs, node *expr);
+node *add_expr_to_cycle(node *cycle, node *item);
 
 void free_ast(node *ast);
 #endif

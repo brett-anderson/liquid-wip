@@ -9,5 +9,10 @@
 {{- neato.woop[2].a | upcase thing: 'because', wat: 3.1415 | things wtf: "ASDF", q: "q", w: "w" }}
 {{ 42 }}
 {% style %}
-  neato
+	neato {{ 3 }}
 {% endstyle %}
+{% capture var %}
+	huh {{ 3 }}
+{% endcapture %}
+{% cycle 'one', 'two', three %}
+{% cycle b: 'one', 'two', 'three' %}

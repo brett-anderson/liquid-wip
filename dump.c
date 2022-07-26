@@ -18,6 +18,8 @@ void dump_layout(node *n, int indent);
 void dump_section(node *n, int indent);
 void dump_bool(node *n, int indent);
 void dump_style(node *n, int indent);
+void dump_capture(node *n, int indent);
+void dump_cycle(node *n, int indent);
 char *escape(char *buffer);
 
 void dump(node *n) {
@@ -97,6 +99,12 @@ void dump_indent(node *n, int indent) {
 			break;
 		case NODE_STYLE:
 			dump_style(n, indent);
+			break;
+		case NODE_CAPTURE:
+			dump_capture(n, indent);
+			break;
+		case NODE_CYCLE:
+			dump_cycle(n, indent);
 			break;
 		default:
 			yyerror("dump not written for node type!");
@@ -179,6 +187,20 @@ void dump_bool(node *n, int indent) {
 void dump_style(node *n, int indent) {
 	printf("%*sStyle:\n", indent, "");
 	dump_indent(n->nd_expr1, indent + 2);
+}
+
+void dump_capture(node *n, int indent) {
+	printf("%*sCapture (%s):\n", indent, "", n->nd_string);
+	dump_indent(n->nd_expr2, indent + 2);
+}
+
+void dump_cycle(node *n, int indent) {
+	if (n->nd_groupname == NULL) {
+		printf("%*sCycle (default):\n", indent, "");
+	} else {
+		printf("%*sCycle (%s):\n", indent, "", n->nd_groupname);
+	}
+	dump_indent(n->nd_items, indent + 2);
 }
 
 void dump_filter(node *n, int indent) {
