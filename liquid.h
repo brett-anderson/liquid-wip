@@ -68,6 +68,7 @@ enum node_type_t {
   NODE_BLANK = 20,
   NODE_LAYOUT = 21,
   NODE_SECTION = 22,
+  NODE_STYLE = 23,
 };
 
 struct node {
@@ -111,6 +112,7 @@ node *new_empty_node();
 node *new_blank_node();
 node *new_layout_node(node *arg);
 node *new_section_node(node *arg);
+node *new_style_node(node *exprs);
 
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
 node *new_exprs_node();

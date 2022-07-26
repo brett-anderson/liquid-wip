@@ -17,6 +17,7 @@ void dump_include(node *n, int indent);
 void dump_layout(node *n, int indent);
 void dump_section(node *n, int indent);
 void dump_bool(node *n, int indent);
+void dump_style(node *n, int indent);
 char *escape(char *buffer);
 
 void dump(node *n) {
@@ -94,6 +95,9 @@ void dump_indent(node *n, int indent) {
 		case NODE_SECTION:
 			dump_section(n, indent);
 			break;
+		case NODE_STYLE:
+			dump_style(n, indent);
+			break;
 		default:
 			yyerror("dump not written for node type!");
 			break;
@@ -117,7 +121,7 @@ void dump_exprs(node *n, int indent) {
 
 	node **subs = n->nd_expr_rest;
 	if (subs != NULL) {
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 128; i++) {
 			sub = subs[i];
 			if (sub == NULL) break;
 			/* printf("%*sExpr[%d]\n", indent + 2, "", i + 2); */
@@ -170,6 +174,11 @@ void dump_bool(node *n, int indent) {
 	} else {
 		printf("%*s<false>\n", indent, "");
 	}
+}
+
+void dump_style(node *n, int indent) {
+	printf("%*sStyle:\n", indent, "");
+	dump_indent(n->nd_expr1, indent + 2);
 }
 
 void dump_filter(node *n, int indent) {

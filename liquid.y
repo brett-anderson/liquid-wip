@@ -80,25 +80,22 @@ filter:
 | filter ',' argname expr    { $$ = add_arg_to_filter($1, $3, $4); }
 ;
 
-member:
-  expr '.' id                { $$ = new_member_node($1, $3); }
-;
-
-indexation:
-  expr '[' expr ']'          { $$ = new_indexation_node($1, $3); }
-;
-
 output:
   BEGIN_OUTPUT fexpr END_OUTPUT { $$ = new_echo_node($2); }
 ;
 
 tag:
   BEGIN_TAG texpr END_TAG    { $$ = $2; }
+| BEGIN_TAG STYLE END_TAG exprs endstyle { $$ = new_style_node($4); }
 ;
 
 texpr: /* _T_ag expression: contents of a {% %} */
   texpr0
 | liquid_texpr
+;
+
+endstyle:
+  BEGIN_TAG ENDSTYLE END_TAG
 ;
 
 texpr0:
@@ -134,6 +131,14 @@ fexpr: /* (maybe) _F_iltered expr */
   expr
 | filter
 | output
+;
+
+member:
+  expr '.' id                { $$ = new_member_node($1, $3); }
+;
+
+indexation:
+  expr '[' expr ']'          { $$ = new_indexation_node($1, $3); }
 ;
 
 expr:
@@ -290,9 +295,9 @@ node *add_expr_to_exprs(node *exprs, node *expr) {
   } else {
     if (exprs->nd_expr_rest == NULL) {
       // TODO: obviously this is wildly shitty
-      exprs->nd_expr_rest = calloc(16, sizeof(void*));
+      exprs->nd_expr_rest = calloc(128, sizeof(void*));
     }
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 128; i++) {
       if (exprs->nd_expr_rest[i] == NULL) {
         exprs->nd_expr_rest[i] = expr;
         return exprs;
@@ -365,6 +370,12 @@ node *new_layout_node(node *name) {
 node *new_section_node(node *name) {
   node *node = setup_node(NODE_SECTION);
   node->nd_expr1 = name;
+  return node;
+}
+
+node *new_style_node(node *exprs) {
+  node *node = setup_node(NODE_STYLE);
+  node->nd_expr1 = exprs;
   return node;
 }
 
