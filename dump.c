@@ -14,6 +14,8 @@ void dump_echo(node *n, int indent);
 void dump_indexation(node *n, int indent);
 void dump_assign(node *n, int indent);
 void dump_include(node *n, int indent);
+void dump_layout(node *n, int indent);
+void dump_section(node *n, int indent);
 void dump_bool(node *n, int indent);
 char *escape(char *buffer);
 
@@ -86,6 +88,12 @@ void dump_indent(node *n, int indent) {
 		case NODE_BLANK:
 			printf("%*s<blank>\n", indent, "");
 			break;
+		case NODE_LAYOUT:
+			dump_layout(n, indent);
+			break;
+		case NODE_SECTION:
+			dump_section(n, indent);
+			break;
 		default:
 			yyerror("dump not written for node type!");
 			break;
@@ -143,6 +151,16 @@ void dump_assign(node *n, int indent) {
 
 void dump_include(node *n, int indent) {
 	printf("%*sInclude:\n", indent, "");
+	dump_indent(n->nd_expr1, indent + 2);
+}
+
+void dump_layout(node *n, int indent) {
+	printf("%*sLayout:\n", indent, "");
+	dump_indent(n->nd_expr1, indent + 2);
+}
+
+void dump_section(node *n, int indent) {
+	printf("%*sSection:\n", indent, "");
 	dump_indent(n->nd_expr1, indent + 2);
 }
 

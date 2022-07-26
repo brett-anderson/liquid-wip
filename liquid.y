@@ -107,6 +107,8 @@ texpr0:
 | INCREMENT id               { $$ = new_increment_node($2); }
 | DECREMENT id               { $$ = new_decrement_node($2); }
 | INCLUDE expr               { $$ = new_include_node($2); }
+| LAYOUT expr                { $$ = new_layout_node($2); }
+| SECTION expr               { $$ = new_section_node($2); }
 /* | IF */
 /* | UNLESS */
 /* | CASE */
@@ -116,8 +118,6 @@ texpr0:
 /* | CYCLE */
 /* | TABLEROW */
 /* | PAGINATE */
-/* | LAYOUT */
-/* | SECTION */
 /* | CAPTURE */
 ;
 
@@ -355,3 +355,16 @@ node *new_blank_node() {
   node *node = setup_node(NODE_BLANK);
   return node;
 }
+
+node *new_layout_node(node *name) {
+  node *node = setup_node(NODE_LAYOUT);
+  node->nd_expr1 = name;
+  return node;
+}
+
+node *new_section_node(node *name) {
+  node *node = setup_node(NODE_SECTION);
+  node->nd_expr1 = name;
+  return node;
+}
+
