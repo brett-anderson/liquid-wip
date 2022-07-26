@@ -136,55 +136,6 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-  /*
-id: ID
-  | IF          { $$ = "if"; }
-  | ENDIF       { $$ = "endif"; }
-  | ELSIF       { $$ = "elsif"; }
-  | ELSE        { $$ = "else"; }
-  | UNLESS      { $$ = "unless"; }
-  | ENDUNLESS   { $$ = "endunless"; }
-  | CASE        { $$ = "case"; }
-  | ENDCASE     { $$ = "endcase"; }
-  | FORM        { $$ = "form"; }
-  | ENDFORM     { $$ = "endform"; }
-  | STYLE       { $$ = "style"; }
-  | ENDSTYLE    { $$ = "endstyle"; }
-  | FOR         { $$ = "for"; }
-  | ENDFOR      { $$ = "endfor"; }
-  | BREAK       { $$ = "break"; }
-  | CONTINUE    { $$ = "continue"; }
-  | CYCLE       { $$ = "cycle"; }
-  | TABLEROW    { $$ = "tablerow"; }
-  | ENDTABLEROW { $$ = "endtablerow"; }
-  | PAGINATE    { $$ = "paginate"; }
-  | ENDPAGINATE { $$ = "endpaginate"; }
-  | S_ECHO      { $$ = "echo"; }
-  | LIQUID      { $$ = "liquid"; }
-  | INCLUDE     { $$ = "include"; }
-  | LAYOUT      { $$ = "layout"; }
-  | RENDER      { $$ = "render"; }
-  | SECTION     { $$ = "section"; }
-  | ASSIGN      { $$ = "assign"; }
-  | CAPTURE     { $$ = "capture"; }
-  | ENDCAPTURE  { $$ = "endcapture"; }
-  | DECREMENT   { $$ = "decrement"; }
-  | INCREMENT   { $$ = "increment"; }
-  | WITH        { $$ = "with"; }
-  | AS          { $$ = "as"; }
-  | IN          { $$ = "in"; }
-  | CONTAINS    { $$ = "contains"; }
-  | EMPTY       { $$ = "empty"; }
-  | BLANK       { $$ = "blank"; }
-  | NIL         { $$ = "nil"; }
-  | NONE        { $$ = "none"; }
-  | WHEN        { $$ = "when"; }
-  | BY          { $$ = "by"; }
-  | OR          { $$ = "or"; }
-  | AND         { $$ = "and"; }
-  ;
-*/
-
 node *setup_node(enum node_type_t type) {
   node *node = calloc(1, sizeof(struct node));
   if (node == NULL) {
@@ -265,7 +216,6 @@ node *new_filter_node(node *input, node *name) {
   node *node = setup_node(NODE_FILTER);
   node->nd_filter_input = input;
   node->nd_filter_name = name->nd_string;
-  node->nd_filter_args = NULL;
   return node;
 }
 
@@ -273,7 +223,6 @@ node *add_arg_to_filter(node *filter, node *argname, node *argval) {
   node *argnode = setup_node(NODE_ARG);
   argnode->nd_name = argname->nd_string;
   argnode->nd_val = argval;
-  argnode->nd_nextarg = NULL;
 
   node *curr = filter->nd_filter_args;
   if (curr == NULL) {
@@ -287,18 +236,12 @@ node *add_arg_to_filter(node *filter, node *argname, node *argval) {
 
 node *new_exprs_node() {
   node *node = setup_node(NODE_EXPRS);
-  node->nd_expr1 = NULL;
-  node->nd_expr2 = NULL;
-  node->nd_expr_rest = NULL;
   return node;
 }
 
 node *add_expr_to_exprs(node *exprs, node *expr) {
   if (exprs == NULL) {
     exprs = setup_node(NODE_EXPRS);
-    exprs->nd_expr1 = NULL;
-    exprs->nd_expr2 = NULL;
-    exprs->nd_expr_rest = NULL;
   }
 
   if (exprs->nd_expr1 == NULL) {
