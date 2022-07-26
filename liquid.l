@@ -8,6 +8,7 @@
 
 bool ll_init = true;
 void bail(char *msg);
+char *trim_colon(char *argname);
 %}
 
 /* Initial state, where text is literally copied to output until we encounter
@@ -30,6 +31,7 @@ void bail(char *msg);
  /* TODO: find the correct set of valid chars */
 ID_char [^[:space:]:!"#%&'()*+,./;<=>[\\\]^`{|}~]
 ID      {ID_char}+
+arg     {ID_char}+[:space:]*:
 int     -?[0-9]+
 float   -?[0-9]+.[0-9]+
 space   [ \n\v\f\t\r]
@@ -198,6 +200,7 @@ space   [ \n\v\f\t\r]
 <S_OUTPUT,S_TAG>{int}   { yylval.ival = atoi(yytext); return INT; }
 <S_OUTPUT,S_TAG>{float} { yylval.dval = atof(yytext); return FLOAT; }
 <S_OUTPUT,S_TAG>{ID}    { yylval.str = yytext; return ID; }
+<S_OUTPUT,S_TAG>{arg}   { yylval.str = trim_colon(yytext); return ARGNAME; }
  /* TODO: interpret correctly */
 <S_OUTPUT,S_TAG>\"[^"\n]*\" |
 <S_OUTPUT,S_TAG>'[^'\n]*'   {
@@ -208,10 +211,21 @@ space   [ \n\v\f\t\r]
  /**** GENERIC ***************************************************************/
 
 .                    { bail("unhandled character in input"); }
-<<EOF>>              ;
 
 
 %%
+
+char *trim_colon(char *argname) {
+  char *end = argname + strlen(argname) - 1;
+  if ((unsigned char)*end != ':') {
+    return argname;
+  }
+  end--;
+  /* liquid also accepts whitespace between the argname and the ':' */
+  while(end > argname && isspace((unsigned char)*end)) end--;
+  end[1] = '\0';
+  return argname;
+}
 
 // TODO: use yyerror
 void bail(char *msg) {

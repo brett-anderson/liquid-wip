@@ -29,6 +29,11 @@
 #define nd_filter_name u2.str
 #define nd_filter_args u3.node
 
+/* exprs */
+#define nd_expr1 u1.node
+#define nd_expr2 u2.node
+#define nd_expr_rest u3.nodelist
+
 enum node_type_t {
   NODE_TEXT = 0,
   NODE_STRING = 1,
@@ -41,6 +46,8 @@ enum node_type_t {
   NODE_ASSIGN = 8,
   NODE_FILTER = 9,
   NODE_ARG = 10,
+  NODE_EXPRS = 11,
+  NODE_ARGNAME = 12,
 };
 
 struct node {
@@ -58,6 +65,7 @@ struct node {
   } u2;
   union u3 {
     struct node *node;
+    struct node **nodelist;
   } u3;
 };
 typedef struct node node;
@@ -71,7 +79,10 @@ node *new_string_node(char *val);
 node *new_member_node(node *left, node *right);
 node *new_if_node(node *cond, node *then, node *else_);
 node *new_filter_node(node *input, node *name);
+node *new_exprs_node();
+node *new_argname_node(char *val);
 
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
+node *add_expr_to_exprs(node *exprs, node *expr);
 
 void free_ast(node *ast);
