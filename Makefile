@@ -4,7 +4,7 @@ CC     = cc
 CFLAGS = -DYYDEBUG=1 -Werror -O0 -g
 LFLAGS = -ll -ly -lm
 
-liquid-parser: lex.yy.o liquid.tab.o dump.o
+liquid-parser: lex.yy.o liquid.tab.o dump.o vc_vector.o
 	$(CC) $(CFLAGS) $(LFLAGS) -o $@ $^
 
 lex.yy.c: liquid.l liquid.tab.h
