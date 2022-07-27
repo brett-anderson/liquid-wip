@@ -47,6 +47,10 @@
 #define nd_groupname u1.str
 #define nd_items u2.node
 
+#define nd_paginate_array u1.node
+#define nd_paginate_page_size u2.node
+#define nd_paginate_exprs u3.node
+
 enum node_type_t {
   NODE_TEXT = 0,
   NODE_STRING = 1,
@@ -74,6 +78,7 @@ enum node_type_t {
   NODE_STYLE = 23,
   NODE_CAPTURE = 24,
   NODE_CYCLE = 25,
+  NODE_PAGINATE = 26,
 };
 
 struct node {
@@ -120,6 +125,7 @@ node *new_section_node(node *arg);
 node *new_style_node(node *exprs);
 node *new_capture_node(node *varname, node *exprs);
 node *new_cycle_node(node *groupname, node *arglist);
+node *new_paginate_node(node *array, node *page_size, node *exprs);
 
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
 node *new_exprs_node();

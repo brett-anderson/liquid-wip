@@ -16,3 +16,6 @@
 {% endcapture %}
 {% cycle 'one', 'two', three %}
 {% cycle b: 'one', 'two', 'three' %}
+{% paginate collection.products by 5 %}
+  {{- paginate | default_pagination }}
+{% endpaginate %}

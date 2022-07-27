@@ -77,7 +77,8 @@ filter0:
 ;
 
 filter:
-  filter0 argname expr       { $$ = add_arg_to_filter($1, $2, $3); }
+  filter0
+| filter0 argname expr       { $$ = add_arg_to_filter($1, $2, $3); }
 | filter ',' argname expr    { $$ = add_arg_to_filter($1, $3, $4); }
 ;
 
@@ -87,10 +88,21 @@ output:
 
 tag:
   BEGIN_TAG texpr END_TAG    { $$ = $2; }
-| BEGIN_TAG STYLE END_TAG exprs endstyle { $$ = new_style_node($4); }
-| BEGIN_TAG CAPTURE id END_TAG exprs endcapture { $$ = new_capture_node($3, $5); }
-| BEGIN_TAG CYCLE argname arglist END_TAG { $$ = new_cycle_node($3, $4); }
-| BEGIN_TAG CYCLE arglist END_TAG { $$ = new_cycle_node(NULL, $3); }
+| BEGIN_TAG STYLE END_TAG exprs endstyle {
+    $$ = new_style_node($4);
+  }
+| BEGIN_TAG CAPTURE id END_TAG exprs endcapture {
+    $$ = new_capture_node($3, $5);
+  }
+| BEGIN_TAG CYCLE argname arglist END_TAG {
+    $$ = new_cycle_node($3, $4);
+  }
+| BEGIN_TAG CYCLE arglist END_TAG {
+    $$ = new_cycle_node(NULL, $3);
+  }
+| BEGIN_TAG PAGINATE expr BY expr END_TAG exprs endpaginate {
+    $$ = new_paginate_node($3, $5, $7);
+  }
 ;
 
 arglist:
@@ -103,7 +115,6 @@ arglist0:
 | arglist0 ',' expr          { $$ = add_expr_to_exprs($1, $3); }
 ;
 
-
 texpr: /* _T_ag expression: contents of a {% %} */
   texpr0
 | liquid_texpr
@@ -115,6 +126,10 @@ endstyle:
 
 endcapture:
   BEGIN_TAG ENDCAPTURE END_TAG
+;
+
+endpaginate:
+  BEGIN_TAG ENDPAGINATE END_TAG
 ;
 
 texpr0:
@@ -130,7 +145,6 @@ texpr0:
 /* | CASE */
 /* | FORM */
 /* | FOR */
-/* | CYCLE */
 /* | TABLEROW */
 /* | PAGINATE */
 ;
@@ -182,10 +196,14 @@ bool:
 | false
 ;
 
+id: /* TODO: list more */
+  ID             { $$ = new_id_node($1);         }
+| PAGINATE       { $$ = new_id_node("paginate"); }
+;
+
 int:     INT     { $$ = new_int_node($1);     } ;
 float:   FLOAT   { $$ = new_float_node($1);   } ;
 text:    TEXT    { $$ = new_text_node($1);    } ;
-id:      ID      { $$ = new_id_node($1);      } ;
 string:  STRING  { $$ = new_string_node($1);  } ;
 argname: ARGNAME { $$ = new_argname_node($1); } ;
 none:    NONE    { $$ = new_none_node();      } ;
@@ -412,5 +430,13 @@ node *new_cycle_node(node *groupname, node *items) {
     node->nd_groupname = groupname->nd_string;
   }
   node->nd_items = items;
+  return node;
+}
+
+node *new_paginate_node(node *array, node *page_size, node *exprs) {
+  node *node = setup_node(NODE_PAGINATE);
+  node->nd_paginate_array = array;
+  node->nd_paginate_page_size = page_size;
+  node->nd_paginate_exprs = exprs;
   return node;
 }

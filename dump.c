@@ -20,6 +20,7 @@ void dump_bool(node *n, int indent);
 void dump_style(node *n, int indent);
 void dump_capture(node *n, int indent);
 void dump_cycle(node *n, int indent);
+void dump_paginate(node *n, int indent);
 char *escape(char *buffer);
 
 void dump(node *n) {
@@ -105,6 +106,9 @@ void dump_indent(node *n, int indent) {
 			break;
 		case NODE_CYCLE:
 			dump_cycle(n, indent);
+			break;
+		case NODE_PAGINATE:
+			dump_paginate(n, indent);
 			break;
 		default:
 			yyerror("dump not written for node type!");
@@ -201,6 +205,16 @@ void dump_cycle(node *n, int indent) {
 		printf("%*sCycle (%s):\n", indent, "", n->nd_groupname);
 	}
 	dump_indent(n->nd_items, indent + 2);
+}
+
+void dump_paginate(node *n, int indent) {
+	printf("%*sPaginate:\n", indent, "");
+	printf("%*sArray:\n", indent + 2, "");
+	dump_indent(n->nd_paginate_array, indent + 4);
+	printf("%*sPage Size:\n", indent + 2, "");
+	dump_indent(n->nd_paginate_page_size, indent + 4);
+	printf("%*sExprs:\n", indent + 2, "");
+	dump_indent(n->nd_paginate_exprs, indent + 4);
 }
 
 void dump_filter(node *n, int indent) {
