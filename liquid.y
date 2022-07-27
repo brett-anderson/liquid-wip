@@ -195,13 +195,13 @@ indexation:
 ;
 
 expr:
-  member            %prec '.'
-| indexation        %prec '['
+  member              %prec '.'
+| indexation          %prec '['
 | literal
 | id
 | tag
-| expr compare expr %prec EQUALS
-| expr and_or expr  %prec AND
+| expr compare expr   %prec EQUALS
+| expr and_or expr    %prec AND
 ;
 
 and_or: AND | OR ;
