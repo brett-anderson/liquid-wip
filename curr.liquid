@@ -19,3 +19,10 @@
 {% paginate collection.products by 5 %}
   {{- paginate | default_pagination }}
 {% endpaginate %}
+{% tablerow product in collection.products %}
+	{{ product.title }}
+{% endtablerow %}
+{% for product in collection.products offset: 2 %}
+	{{ product.title }}
+{% endfor %}
+{% if a == 3 and b == 2 %} a {% endif %}

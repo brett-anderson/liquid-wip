@@ -60,6 +60,12 @@ ENDPAGINATE
 %type <ast> int float text id string bool member filter fexpr
   literal expr exprs start argname filter0 output indexation texpr tag
   liquid_texpr texpr0 texprs false true none empty blank arglist arglist0
+  kwarglist kwarglist0
+
+%left '['
+%left '.'
+%left EQUALS NOT_EQUALS '>' '<' GTE LTE SPACESHIP
+%left AND OR
 
 %%
 
@@ -103,6 +109,29 @@ tag:
 | BEGIN_TAG PAGINATE expr BY expr END_TAG exprs endpaginate {
     $$ = new_paginate_node($3, $5, $7);
   }
+| BEGIN_TAG TABLEROW expr IN expr kwarglist END_TAG exprs endtablerow {
+    $$ = new_tablerow_node($3, $5, $6, $8);
+  }
+| BEGIN_TAG FOR expr IN expr kwarglist END_TAG exprs endfor {
+    $$ = new_for_node($3, $5, $6, $8);
+  }
+| BEGIN_TAG IF expr END_TAG exprs endif {
+    $$ = new_if_node($3, $5, NULL);
+  }
+| BEGIN_TAG IF expr END_TAG exprs else exprs endif {
+    $$ = new_if_node($3, $5, $7);
+  }
+;
+
+kwarglist:
+  %empty                     { $$ = NULL; }
+| kwarglist0
+;
+
+kwarglist0:
+  argname expr               { $$ = add_expr_to_exprs(NULL, $1); }
+  /* TODO: capture names */
+| kwarglist0 ',' argname expr { $$ = add_expr_to_exprs($1, $3); }
 ;
 
 arglist:
@@ -120,17 +149,13 @@ texpr: /* _T_ag expression: contents of a {% %} */
 | liquid_texpr
 ;
 
-endstyle:
-  BEGIN_TAG ENDSTYLE END_TAG
-;
-
-endcapture:
-  BEGIN_TAG ENDCAPTURE END_TAG
-;
-
-endpaginate:
-  BEGIN_TAG ENDPAGINATE END_TAG
-;
+endstyle:    BEGIN_TAG ENDSTYLE    END_TAG ;
+endcapture:  BEGIN_TAG ENDCAPTURE  END_TAG ;
+endpaginate: BEGIN_TAG ENDPAGINATE END_TAG ;
+endtablerow: BEGIN_TAG ENDTABLEROW END_TAG ;
+endfor:      BEGIN_TAG ENDFOR      END_TAG ;
+endif:       BEGIN_TAG ENDIF       END_TAG ;
+else:        BEGIN_TAG ELSE        END_TAG ;
 
 texpr0:
   ASSIGN id '=' fexpr        { $$ = new_assign_node($2, $4); }
@@ -144,9 +169,6 @@ texpr0:
 /* | UNLESS */
 /* | CASE */
 /* | FORM */
-/* | FOR */
-/* | TABLEROW */
-/* | PAGINATE */
 ;
 
 texprs:
@@ -173,11 +195,25 @@ indexation:
 ;
 
 expr:
-  member
-| indexation
+  member            %prec '.'
+| indexation        %prec '['
 | literal
 | id
 | tag
+| expr compare expr %prec EQUALS
+| expr and_or expr  %prec AND
+;
+
+and_or: AND | OR ;
+
+compare:
+  EQUALS
+| NOT_EQUALS /* TODO rest */
+| '<'
+| '>'
+| GTE
+| LTE
+| SPACESHIP
 ;
 
 literal:
@@ -283,14 +319,6 @@ node *new_member_node(node *left, node *right) {
   node->nd_left = left;
   /* TODO: assert that right is a compatible type */
   node->nd_member_name = right->nd_string;
-  return node;
-}
-
-node *new_if_node(node *cond, node *then, node *else_) {
-  node *node = setup_node(NODE_IF);
-  node->nd_cond = cond;
-  node->nd_then = then;
-  node->nd_else = else_;
   return node;
 }
 
@@ -438,5 +466,41 @@ node *new_paginate_node(node *array, node *page_size, node *exprs) {
   node->nd_paginate_array = array;
   node->nd_paginate_page_size = page_size;
   node->nd_paginate_exprs = exprs;
+  return node;
+}
+
+node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs) {
+  node *node = setup_node(NODE_TABLEROW);
+  node->nd_tablerow_varname = varname->nd_string;
+  node->nd_tablerow_array = array;
+  node->nd_tablerow_ext = setup_node(NODE_TABLEROW_EXT);
+  node->nd_tablerow_ext->nd_tablerow_ext_arglist = arglist;
+  node->nd_tablerow_ext->nd_tablerow_ext_exprs = exprs;
+  return node;
+}
+
+node *new_for_node(node *varname, node *array, node *arglist, node *exprs) {
+  node *node = setup_node(NODE_FOR);
+  node->nd_for_varname = varname->nd_string;
+  node->nd_for_array = array;
+  node->nd_for_ext = setup_node(NODE_FOR_EXT);
+  node->nd_for_ext->nd_for_ext_arglist = arglist;
+  node->nd_for_ext->nd_for_ext_exprs = exprs;
+  return node;
+}
+
+node *new_if_node(node *cond, node *then_branch, node *else_branch) {
+  node *node = setup_node(NODE_IF);
+  node->nd_if_cond = cond;
+  node->nd_if_then = then_branch;
+  node->nd_if_else = else_branch;
+  return node;
+}
+
+node *new_unless_node(node *cond, node *then_branch, node *else_branch) {
+  node *node = setup_node(NODE_IF);
+  node->nd_if_cond = cond;
+  node->nd_if_then = else_branch;
+  node->nd_if_else = then_branch;
   return node;
 }

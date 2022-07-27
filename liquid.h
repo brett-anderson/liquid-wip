@@ -13,11 +13,6 @@
 #define nd_double u1._double
 #define nd_string u1.str
 
-/* if/unless */
-#define nd_cond u1.node
-#define nd_then u2.node
-#define nd_else u3.node
-
 /* assign, filter args */
 #define nd_name u1.str
 #define nd_val u2.node
@@ -51,6 +46,26 @@
 #define nd_paginate_page_size u2.node
 #define nd_paginate_exprs u3.node
 
+/* tablerow and for need to hold (varname, array, arglist, exprs) Rather than
+ * add a fourth union to _every_ node, we introduce an extension node: each
+ * tablerow or for call is actually represented by at least two nodes. */
+#define nd_tablerow_varname u1.str
+#define nd_tablerow_array u2.node
+#define nd_tablerow_ext u3.node
+#define nd_tablerow_ext_arglist u1.node
+#define nd_tablerow_ext_exprs u2.node
+
+#define nd_for_varname u1.str
+#define nd_for_array u2.node
+#define nd_for_ext u3.node
+#define nd_for_ext_arglist u1.node
+#define nd_for_ext_exprs u2.node
+
+/* unless is the same node type as if, just with then and else reversed */
+#define nd_if_cond u1.node
+#define nd_if_then u2.node
+#define nd_if_else u3.node
+
 enum node_type_t {
   NODE_TEXT = 0,
   NODE_STRING = 1,
@@ -79,6 +94,10 @@ enum node_type_t {
   NODE_CAPTURE = 24,
   NODE_CYCLE = 25,
   NODE_PAGINATE = 26,
+  NODE_TABLEROW = 27,
+  NODE_TABLEROW_EXT = 28,
+  NODE_FOR = 29,
+  NODE_FOR_EXT = 30,
 };
 
 struct node {
@@ -126,11 +145,13 @@ node *new_style_node(node *exprs);
 node *new_capture_node(node *varname, node *exprs);
 node *new_cycle_node(node *groupname, node *arglist);
 node *new_paginate_node(node *array, node *page_size, node *exprs);
+node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs);
+node *new_for_node(node *varname, node *array, node *arglist, node *exprs);
+node *new_if_node(node *cond, node *then_branch, node *else_branch);
 
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
 node *new_exprs_node();
 node *add_expr_to_exprs(node *exprs, node *expr);
-node *add_expr_to_cycle(node *cycle, node *item);
 
 void free_ast(node *ast);
 #endif

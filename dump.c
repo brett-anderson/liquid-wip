@@ -21,6 +21,9 @@ void dump_style(node *n, int indent);
 void dump_capture(node *n, int indent);
 void dump_cycle(node *n, int indent);
 void dump_paginate(node *n, int indent);
+void dump_tablerow(node *n, int indent);
+void dump_for(node *n, int indent);
+void dump_if(node *n, int indent);
 char *escape(char *buffer);
 
 void dump(node *n) {
@@ -51,7 +54,7 @@ void dump_indent(node *n, int indent) {
 			dump_member(n, indent);
 			break;
 		case NODE_IF:
-			printf("%*s%s\n", indent, "", "<IF>");
+			dump_if(n, indent);
 			break;
 		case NODE_ASSIGN:
 			dump_assign(n, indent);
@@ -110,6 +113,12 @@ void dump_indent(node *n, int indent) {
 		case NODE_PAGINATE:
 			dump_paginate(n, indent);
 			break;
+		case NODE_TABLEROW:
+			dump_tablerow(n, indent);
+			break;
+		case NODE_FOR:
+			dump_for(n, indent);
+			break;
 		default:
 			yyerror("dump not written for node type!");
 			break;
@@ -150,6 +159,20 @@ void dump_echo(node *n, int indent) {
 void dump_member(node *n, int indent) {
 	printf("%*sMember '%s' of:\n", indent, "", n->nd_member_name);
 	dump_indent(n->nd_left, indent + 2);
+}
+
+void dump_if(node *n, int indent) {
+	printf("%*sIf:\n", indent, "");
+	printf("%*sCond:\n", indent + 2, "");
+	dump_indent(n->nd_if_cond, indent + 4);
+	if (n->nd_if_then != NULL) {
+		printf("%*sThen:\n", indent + 2, "");
+		dump_indent(n->nd_if_then, indent + 4);
+	}
+	if (n->nd_if_else != NULL) {
+		printf("%*sElse:\n", indent + 2, "");
+		dump_indent(n->nd_if_else, indent + 4);
+	}
 }
 
 void dump_indexation(node *n, int indent) {
@@ -215,6 +238,34 @@ void dump_paginate(node *n, int indent) {
 	dump_indent(n->nd_paginate_page_size, indent + 4);
 	printf("%*sExprs:\n", indent + 2, "");
 	dump_indent(n->nd_paginate_exprs, indent + 4);
+}
+
+void dump_tablerow(node *n, int indent) {
+	printf("%*sTablerow (%s):\n", indent, "", n->nd_tablerow_varname);
+	printf("%*sArray:\n", indent + 2, "");
+	dump_indent(n->nd_tablerow_array, indent + 4);
+	printf("%*sArgs:\n", indent + 2, "");
+	if (NULL == n->nd_tablerow_ext->nd_tablerow_ext_arglist) {
+		printf("%*s(none)\n", indent + 4, "");
+	} else {
+		dump_indent(n->nd_tablerow_ext->nd_tablerow_ext_arglist, indent + 4);
+	}
+	printf("%*sExprs:\n", indent + 2, "");
+	dump_indent(n->nd_tablerow_ext->nd_tablerow_ext_exprs, indent + 4);
+}
+
+void dump_for(node *n, int indent) {
+	printf("%*sFor (%s):\n", indent, "", n->nd_for_varname);
+	printf("%*sArray:\n", indent + 2, "");
+	dump_indent(n->nd_for_array, indent + 4);
+	printf("%*sArgs:\n", indent + 2, "");
+	if (NULL == n->nd_for_ext->nd_for_ext_arglist) {
+		printf("%*s(none)\n", indent + 4, "");
+	} else {
+		dump_indent(n->nd_for_ext->nd_for_ext_arglist, indent + 4);
+	}
+	printf("%*sExprs:\n", indent + 2, "");
+	dump_indent(n->nd_for_ext->nd_for_ext_exprs, indent + 4);
 }
 
 void dump_filter(node *n, int indent) {
