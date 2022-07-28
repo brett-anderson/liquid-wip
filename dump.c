@@ -26,6 +26,7 @@ void dump_for(node *n, int indent);
 void dump_compare(node *n, int indent);
 void dump_if(node *n, int indent);
 void dump_case(node *n, int indent);
+void dump_form(node *n, int indent);
 char *escape(char *buffer);
 
 void dump(node *n) {
@@ -126,6 +127,9 @@ void dump_indent(node *n, int indent) {
 			break;
 		case NODE_CASE:
 			dump_case(n, indent);
+			break;
+		case NODE_FORM:
+			dump_form(n, indent);
 			break;
 		default:
 			yyerror("dump not written for node type!");
@@ -305,6 +309,25 @@ void dump_case(node *n, int indent) {
 	}
 }
 
+void dump_form(node *n, int indent) {
+	printf("%*sForm:\n", indent, "");
+	printf("%*sType:\n", indent + 2, "");
+	dump_indent(n->nd_form_type, indent + 4);
+
+	if (n->nd_form_obj != NULL) {
+		printf("%*sObj:\n", indent + 2, "");
+		dump_indent(n->nd_form_obj, indent + 4);
+	}
+
+	node *ext = n->nd_form_ext;
+	if (ext->nd_form_ext_kwarglist != NULL) {
+		printf("%*sKwarglist:\n", indent + 2, "");
+		dump_indent(ext->nd_form_ext_kwarglist, indent + 4);
+	}
+
+	printf("%*sExprs:\n", indent + 2, "");
+	dump_indent(ext->nd_form_ext_exprs, indent + 4);
+}
 void dump_filter(node *n, int indent) {
 	printf("%*sFilter (%s):\n", indent, "", n->nd_filter_name);
 

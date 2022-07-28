@@ -128,6 +128,20 @@ tag:
     /* The TEXT node here is invariably ignored. */
     $$ = complete_case_node($3, $6);
   }
+| BEGIN_TAG FORM expr END_TAG exprs endform {
+    /* obviously stupid redundancy in these form tag handlers, refactor would
+     * be good... */
+    $$ = new_form_node($3, NULL, NULL, $5);
+  }
+| BEGIN_TAG FORM expr ',' expr END_TAG exprs endform {
+    $$ = new_form_node($3, $5, NULL, $7);
+  }
+| BEGIN_TAG FORM expr ',' kwarglist END_TAG exprs endform {
+    $$ = new_form_node($3, NULL, $5, $7);
+  }
+| BEGIN_TAG FORM expr ',' expr ',' kwarglist END_TAG exprs endform {
+    $$ = new_form_node($3, $5, $7, $9);
+  }
 ;
 
 maybe_text:
@@ -194,6 +208,7 @@ endif:       BEGIN_TAG ENDIF       END_TAG ;
 else:        BEGIN_TAG ELSE        END_TAG ;
 endunless:   BEGIN_TAG ENDUNLESS   END_TAG ;
 endcase:     BEGIN_TAG ENDCASE     END_TAG ;
+endform:     BEGIN_TAG ENDFORM     END_TAG ;
 
 texpr0:
   ASSIGN id '=' fexpr        { $$ = new_assign_node($2, $4); }
@@ -203,7 +218,6 @@ texpr0:
 | INCLUDE expr               { $$ = new_include_node($2); }
 | LAYOUT expr                { $$ = new_layout_node($2); }
 | SECTION expr               { $$ = new_section_node($2); }
-/* | FORM */
 ;
 
 texprs:
@@ -634,4 +648,14 @@ node *merge_case_node(node *cond, node *then, node *case_node) {
 node *complete_case_node(node *var, node *case_node) {
   case_node->nd_case_var = var;
   return case_node;
+}
+
+node *new_form_node(node *type, node *obj, node *kwarglist, node *exprs) {
+  node *node = setup_node(NODE_FORM);
+  node->nd_form_type = type;
+  node->nd_form_obj = obj;
+  node->nd_form_ext = setup_node(NODE_FORM_EXT);
+  node->nd_form_ext->nd_form_ext_kwarglist = kwarglist;
+  node->nd_form_ext->nd_form_ext_exprs = exprs;
+  return node;
 }

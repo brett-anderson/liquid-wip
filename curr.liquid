@@ -35,3 +35,7 @@
 {% else %}
 	lol
 {% endcase %}
+{% form 'a', b, c: d %} e {% endform %}
+{% form 'a', b %} e {% endform %}
+{% form 'a', c: d %} e {% endform %}
+{% form 'a' %} e {% endform %}

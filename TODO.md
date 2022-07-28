@@ -1,6 +1,4 @@
-* `case` tag
-* `form` tag
-* Capture args correctly on for and tablerow
+* Capture args correctly on for and tablerow (really in kwarglist)
 * `liquid` tag semantics
 * ranges
 * parse strings

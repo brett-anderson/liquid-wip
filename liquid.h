@@ -78,6 +78,12 @@
 #define nd_case_when_then u2.node
 #define nd_case_when_next u3.node
 
+#define nd_form_type u1.node
+#define nd_form_obj u2.node
+#define nd_form_ext u3.node
+#define nd_form_ext_kwarglist u1.node
+#define nd_form_ext_exprs u2.node
+
 enum node_type_t {
   NODE_TEXT = 0,
   NODE_STRING = 1,
@@ -114,6 +120,8 @@ enum node_type_t {
   NODE_AND_OR = 32,
   NODE_CASE = 33,
   NODE_CASE_WHEN = 34,
+  NODE_FORM = 35,
+  NODE_FORM_EXT = 36,
 };
 
 enum comparator_t {
@@ -179,6 +187,7 @@ node *new_if_node(node *cond, node *then_branch, node *else_branch);
 node *new_unless_node(node *cond, node *then_branch, node *else_branch);
 node *new_compare_node(enum comparator_t comp, node *left, node *right);
 node *new_case_node(node *else_);
+node *new_form_node(node *type, node *obj, node *kwarglist, node *exprs);
 
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
 node *new_exprs_node();
