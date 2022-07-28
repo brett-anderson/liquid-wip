@@ -2,6 +2,8 @@
 * `liquid` tag semantics
 * hash comments
 * parse strings
+* yylloc tracking
+* errors with location information
 * Allow all valid tokens as ID (like `paginate`)
 * More efficient allocation
 * Actually free data
@@ -11,6 +13,5 @@
 * Expose as library
 * Coalesce adjacent Text nodes
 * Clean up handling of Text to prevent splitting on `{`
-* Preserve locations
 * Compile to Wasm
 * Build DWARF info
