@@ -174,6 +174,7 @@ node *new_exprs_node();
 node *add_expr_to_exprs(node *exprs, node *expr);
 node *merge_elsif_node(node *cond, node *then, node *else_);
 node *complete_if_node(node *cond, node *then, node *else_);
+node *complete_unless_node(node *cond, node *then, node *else_);
 
 void free_ast(node *ast);
 #endif

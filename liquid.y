@@ -61,7 +61,7 @@ ENDPAGINATE
 %type <ast> int float text id string bool member filter fexpr
   literal expr exprs start argname filter0 output indexation texpr tag
   liquid_texpr texpr0 texprs false true none empty blank arglist arglist0
-  kwarglist kwarglist0 elsifs_else_endif
+  kwarglist kwarglist0 elsifs_else_endif elsifs_else_endunless
 
 %type <comparator> compare and_or
 
@@ -121,11 +121,8 @@ tag:
 | BEGIN_TAG IF expr END_TAG exprs elsifs_else_endif {
     $$ = complete_if_node($3, $5, $6);
   }
-| BEGIN_TAG UNLESS expr END_TAG exprs endunless {
-    $$ = new_unless_node($3, $5, NULL);
-  }
-| BEGIN_TAG UNLESS expr END_TAG exprs else exprs endunless {
-    $$ = new_unless_node($3, $5, $7);
+| BEGIN_TAG UNLESS expr END_TAG exprs elsifs_else_endunless {
+    $$ = complete_unless_node($3, $5, $6);
   }
 ;
 
@@ -135,6 +132,14 @@ elsifs_else_endif:
   }
 | else exprs endif           { $$ = new_if_node(NULL, NULL, $2); }
 | endif                      { $$ = new_if_node(NULL, NULL, NULL); }
+;
+
+elsifs_else_endunless:
+  BEGIN_TAG ELSIF expr END_TAG exprs elsifs_else_endunless {
+    $$ = merge_elsif_node($3, $5, $6);
+  }
+| else exprs endunless       { $$ = new_if_node(NULL, NULL, $2); }
+| endunless                  { $$ = new_if_node(NULL, NULL, NULL); }
 ;
 
 kwarglist:
@@ -544,6 +549,32 @@ node *merge_elsif_node(node *cond, node *then, node *else_) {
   return node;
 }
 
+node *complete_unless_node(node *cond, node *then, node *else_) {
+  if (else_ == NULL) {
+    /* this was unless/endunless */
+    node *node = setup_node(NODE_IF);
+    node->nd_if_cond = cond;
+    node->nd_if_else = then; // invert
+    return node;
+  }
+  // else_ is guaranteed to be NODE_IF
+  if (else_->nd_if_cond == NULL) {
+    /* this was unless/else/endunless. Reuse the else_ node, but invert it
+     * because this is an unless */
+    else_->nd_if_cond = cond;
+    else_->nd_if_then = else_->nd_if_else;
+    else_->nd_if_else = then;
+    return else_;
+  }
+
+  /* we had at least one elsif */
+  node *node = setup_node(NODE_IF);
+  node->nd_if_cond = cond;
+  node->nd_if_then = else_;
+  node->nd_if_else = then;
+  return node;
+}
+
 node *complete_if_node(node *cond, node *then, node *else_) {
   if (else_ == NULL) {
     /* this was if/endif */
@@ -566,7 +597,4 @@ node *complete_if_node(node *cond, node *then, node *else_) {
   node->nd_if_then = then;
   node->nd_if_else = else_;
   return node;
-
-  /* what about if/elsif/endif ? */
-
 }
