@@ -255,12 +255,12 @@ void dump_paginate(node *n, int indent) {
 void dump_tablerow(node *n, int indent) {
 	printf("%*sTablerow (%s):\n", indent, "", n->nd_tablerow_varname);
 	printf("%*sArray:\n", indent + 2, "");
-	dump_indent(n->nd_tablerow_array, indent + 4);
+	dump_indent(n->nd_tablerow_ext->nd_tablerow_ext_array, indent + 4);
 	printf("%*sArgs:\n", indent + 2, "");
-	if (NULL == n->nd_tablerow_ext->nd_tablerow_ext_arglist) {
+	if (NULL == n->nd_tablerow_arglist) {
 		printf("%*s(none)\n", indent + 4, "");
 	} else {
-		dump_indent(n->nd_tablerow_ext->nd_tablerow_ext_arglist, indent + 4);
+		dump_indent(n->nd_tablerow_arglist, indent + 4);
 	}
 	printf("%*sExprs:\n", indent + 2, "");
 	dump_indent(n->nd_tablerow_ext->nd_tablerow_ext_exprs, indent + 4);
@@ -269,12 +269,12 @@ void dump_tablerow(node *n, int indent) {
 void dump_for(node *n, int indent) {
 	printf("%*sFor (%s):\n", indent, "", n->nd_for_varname);
 	printf("%*sArray:\n", indent + 2, "");
-	dump_indent(n->nd_for_array, indent + 4);
+	dump_indent(n->nd_for_ext->nd_for_ext_array, indent + 4);
 	printf("%*sArgs:\n", indent + 2, "");
-	if (NULL == n->nd_for_ext->nd_for_ext_arglist) {
+	if (NULL == n->nd_for_arglist) {
 		printf("%*s(none)\n", indent + 4, "");
 	} else {
-		dump_indent(n->nd_for_ext->nd_for_ext_arglist, indent + 4);
+		dump_indent(n->nd_for_arglist, indent + 4);
 	}
 	printf("%*sExprs:\n", indent + 2, "");
 	dump_indent(n->nd_for_ext->nd_for_ext_exprs, indent + 4);

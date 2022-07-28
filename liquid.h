@@ -51,16 +51,26 @@
  * add a fourth union to _every_ node, we introduce an extension node: each
  * tablerow or for call is actually represented by at least two nodes. */
 #define nd_tablerow_varname u1.str
-#define nd_tablerow_array u2.node
+#define nd_tablerow_arglist u2.node
 #define nd_tablerow_ext u3.node
-#define nd_tablerow_ext_arglist u1.node
-#define nd_tablerow_ext_exprs u2.node
+#define nd_tablerow_ext_exprs u1.node
+#define nd_tablerow_ext_array u2.node
+#define nd_tablerow_ext_range_begin u2.node
+#define nd_tablerow_ext_range_end u3.node
+
+#define ND_FLAG_TABLEROW_REVERSED 1<<0
+#define ND_FLAG_TABLEROW_RANGE 1<<1
 
 #define nd_for_varname u1.str
-#define nd_for_array u2.node
+#define nd_for_arglist u2.node
 #define nd_for_ext u3.node
-#define nd_for_ext_arglist u1.node
-#define nd_for_ext_exprs u2.node
+#define nd_for_ext_exprs u1.node
+#define nd_for_ext_array u2.node
+#define nd_for_ext_range_begin u2.node
+#define nd_for_ext_range_end u3.node
+
+#define ND_FLAG_FOR_REVERSED 1<<0
+#define ND_FLAG_RANGE_RANGE 1<<1
 
 /* unless is the same node type as if, just with then and else reversed */
 #define nd_if_cond u1.node
@@ -84,9 +94,6 @@
 #define nd_form_ext u3.node
 #define nd_form_ext_kwarglist u1.node
 #define nd_form_ext_exprs u2.node
-
-#define ND_FLAG_FOR_REVERSED 1
-#define ND_FLAG_TABLEROW_REVERSED 1
 
 enum node_type_t {
   NODE_TEXT = 0,

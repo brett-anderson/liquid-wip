@@ -534,9 +534,9 @@ node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs, 
     node->flags = ND_FLAG_TABLEROW_REVERSED;
   }
   node->nd_tablerow_varname = varname->nd_string;
-  node->nd_tablerow_array = array;
+  node->nd_tablerow_arglist = arglist;
   node->nd_tablerow_ext = setup_node(NODE_TABLEROW_EXT);
-  node->nd_tablerow_ext->nd_tablerow_ext_arglist = arglist;
+  node->nd_tablerow_ext->nd_tablerow_ext_array = array;
   node->nd_tablerow_ext->nd_tablerow_ext_exprs = exprs;
   return node;
 }
@@ -547,9 +547,9 @@ node *new_for_node(node *varname, node *array, node *arglist, node *exprs, bool 
     node->flags = ND_FLAG_FOR_REVERSED;
   }
   node->nd_for_varname = varname->nd_string;
-  node->nd_for_array = array;
+  node->nd_for_arglist = arglist;
   node->nd_for_ext = setup_node(NODE_FOR_EXT);
-  node->nd_for_ext->nd_for_ext_arglist = arglist;
+  node->nd_for_ext->nd_for_ext_array = array;
   node->nd_for_ext->nd_for_ext_exprs = exprs;
   return node;
 }
