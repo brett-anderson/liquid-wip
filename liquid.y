@@ -59,7 +59,7 @@ ENDPAGINATE
 %token BEGIN_OUTPUT END_OUTPUT BEGIN_TAG END_TAG
 
 %type <ast> int float text id string bool member filter fexpr
-  literal expr exprs start argname filter0 output indexation texpr tag
+  literal expr exprs start argname output indexation texpr tag
   liquid_texpr texpr0 texprs false true none empty blank arglist arglist0
   kwarglist kwarglist0 elsifs_else_endif elsifs_else_endunless whens_endcase
 
@@ -81,13 +81,12 @@ exprs:
 | exprs fexpr                { $$ = add_expr_to_exprs($1, $2); }
 ;
 
-filter0:
-  fexpr '|' id               { $$ = new_filter_node($1, $3); }
-;
-
 filter:
-  filter0
-| filter0 argname expr       { $$ = add_arg_to_filter($1, $2, $3); }
+  fexpr '|' id               { $$ = new_filter_node($1, $3); }
+| fexpr '|' argname argname expr  {
+    $$ = new_filter_node($1, $3);
+    $$ = add_arg_to_filter($$, $4, $5);
+  }
 | filter ',' argname expr    { $$ = add_arg_to_filter($1, $3, $4); }
 ;
 

@@ -1,5 +1,3 @@
-* `expr | filter: arg`
-* `expr | image_url: width: 400`
 * Capture args correctly on for and tablerow (really in kwarglist)
 * `liquid` tag semantics
 * `for x in (a..b)`
