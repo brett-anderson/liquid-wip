@@ -1,7 +1,5 @@
 * Capture args correctly on for and tablerow (really in kwarglist)
 * `liquid` tag semantics
-* `for x in (a..b)`
-* `tablerow x in (a..b)`
 * hash comments
 * parse strings
 * Allow all valid tokens as ID (like `paginate`)

@@ -70,7 +70,7 @@
 #define nd_for_ext_range_end u3.node
 
 #define ND_FLAG_FOR_REVERSED 1<<0
-#define ND_FLAG_RANGE_RANGE 1<<1
+#define ND_FLAG_FOR_RANGE 1<<1
 
 /* unless is the same node type as if, just with then and else reversed */
 #define nd_if_cond u1.node
@@ -195,8 +195,8 @@ node *new_style_node(node *exprs);
 node *new_capture_node(node *varname, node *exprs);
 node *new_cycle_node(node *groupname, node *arglist);
 node *new_paginate_node(node *array, node *page_size, node *exprs);
-node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs, bool reversed);
-node *new_for_node(node *varname, node *array, node *arglist, node *exprs, bool reversed);
+node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs, node *range_end, bool reversed, bool range);
+node *new_for_node(node *varname, node *array, node *arglist, node *exprs, node *range_end, bool reversed, bool range);
 node *new_if_node(node *cond, node *then_branch, node *else_branch);
 node *new_unless_node(node *cond, node *then_branch, node *else_branch);
 node *new_compare_node(enum comparator_t comp, node *left, node *right);

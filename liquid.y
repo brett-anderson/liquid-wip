@@ -111,18 +111,33 @@ tag:
 | BEGIN_TAG PAGINATE expr BY expr END_TAG exprs endpaginate {
     $$ = new_paginate_node($3, $5, $7);
   }
+
 | BEGIN_TAG TABLEROW expr IN expr kwarglist END_TAG exprs endtablerow {
-    $$ = new_tablerow_node($3, $5, $6, $8, false);
+    $$ = new_tablerow_node($3, $5, $6, $8, NULL, false, false);
   }
 | BEGIN_TAG TABLEROW expr IN expr REVERSED kwarglist END_TAG exprs endtablerow {
-    $$ = new_tablerow_node($3, $5, $7, $9, true);
+    $$ = new_tablerow_node($3, $5, $7, $9, NULL, true, false);
   }
+| BEGIN_TAG TABLEROW expr IN '(' expr DOTDOT expr ')' kwarglist END_TAG exprs endtablerow {
+    /* $$ = new_tablerow_node($3, $5, $6, $8, false); */
+  }
+| BEGIN_TAG TABLEROW expr IN '(' expr DOTDOT expr ')' REVERSED kwarglist END_TAG exprs endtablerow {
+    /* $$ = new_tablerow_node($3, $5, $7, $9, true); */
+  }
+
 | BEGIN_TAG FOR expr IN expr kwarglist END_TAG exprs endfor {
-    $$ = new_for_node($3, $5, $6, $8, false);
+    $$ = new_for_node($3, $5, $6, $8, NULL, false, false);
   }
 | BEGIN_TAG FOR expr IN expr REVERSED kwarglist END_TAG exprs endfor {
-    $$ = new_for_node($3, $5, $7, $9, true);
+    $$ = new_for_node($3, $5, $7, $9, NULL, true, false);
   }
+| BEGIN_TAG FOR expr IN '(' expr DOTDOT expr ')' kwarglist END_TAG exprs endfor {
+    /* $$ = new_for_node($3, $5, $6, $8, false); */
+  }
+| BEGIN_TAG FOR expr IN '(' expr DOTDOT expr ')' REVERSED kwarglist END_TAG exprs endfor {
+    /* $$ = new_for_node($3, $5, $7, $9, true); */
+  }
+
 | BEGIN_TAG IF expr END_TAG exprs elsifs_else_endif {
     $$ = complete_if_node($3, $5, $6);
   }
@@ -527,7 +542,7 @@ node *new_paginate_node(node *array, node *page_size, node *exprs) {
   return node;
 }
 
-node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs, bool reversed) {
+node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs, node *range_end, bool reversed, bool range) {
   node *node = setup_node(NODE_TABLEROW);
   if (reversed) {
     node->flags = ND_FLAG_TABLEROW_REVERSED;
@@ -535,12 +550,17 @@ node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs, 
   node->nd_tablerow_varname = varname->nd_string;
   node->nd_tablerow_arglist = arglist;
   node->nd_tablerow_ext = setup_node(NODE_TABLEROW_EXT);
-  node->nd_tablerow_ext->nd_tablerow_ext_array = array;
   node->nd_tablerow_ext->nd_tablerow_ext_exprs = exprs;
+  if (range) {
+    node->nd_tablerow_ext->nd_tablerow_ext_range_begin = array;
+    node->nd_tablerow_ext->nd_tablerow_ext_range_end = range_end;
+  } else {
+    node->nd_tablerow_ext->nd_tablerow_ext_array = array;
+  }
   return node;
 }
 
-node *new_for_node(node *varname, node *array, node *arglist, node *exprs, bool reversed) {
+node *new_for_node(node *varname, node *array, node *arglist, node *exprs, node *range_end, bool reversed, bool range) {
   node *node = setup_node(NODE_FOR);
   if (reversed) {
     node->flags = ND_FLAG_FOR_REVERSED;
@@ -548,8 +568,13 @@ node *new_for_node(node *varname, node *array, node *arglist, node *exprs, bool 
   node->nd_for_varname = varname->nd_string;
   node->nd_for_arglist = arglist;
   node->nd_for_ext = setup_node(NODE_FOR_EXT);
-  node->nd_for_ext->nd_for_ext_array = array;
   node->nd_for_ext->nd_for_ext_exprs = exprs;
+  if (range) {
+    node->nd_for_ext->nd_for_ext_range_begin = array;
+    node->nd_for_ext->nd_for_ext_range_end = range_end;
+  } else {
+    node->nd_for_ext->nd_for_ext_array = array;
+  }
   return node;
 }
 
