@@ -346,6 +346,7 @@ void dump_form(node *n, int indent) {
   printf("%*sExprs:\n", indent + 2, "");
   dump_indent(ext->nd_form_ext_exprs, indent + 4);
 }
+
 void dump_filter(node *n, int indent) {
   printf("%*sFilter (%s):\n", indent, "", n->nd_filter_name);
 
