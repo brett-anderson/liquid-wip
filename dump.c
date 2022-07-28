@@ -23,6 +23,7 @@ void dump_cycle(node *n, int indent);
 void dump_paginate(node *n, int indent);
 void dump_tablerow(node *n, int indent);
 void dump_for(node *n, int indent);
+void dump_compare(node *n, int indent);
 void dump_if(node *n, int indent);
 char *escape(char *buffer);
 
@@ -118,6 +119,9 @@ void dump_indent(node *n, int indent) {
 			break;
 		case NODE_FOR:
 			dump_for(n, indent);
+			break;
+		case NODE_COMPARE:
+			dump_compare(n, indent);
 			break;
 		default:
 			yyerror("dump not written for node type!");
@@ -267,6 +271,15 @@ void dump_for(node *n, int indent) {
 	printf("%*sExprs:\n", indent + 2, "");
 	dump_indent(n->nd_for_ext->nd_for_ext_exprs, indent + 4);
 }
+
+void dump_compare(node *n, int indent) {
+	printf("%*sCompare (%d):\n", indent, "", n->nd_compare_type);
+	printf("%*sLeft:\n", indent + 2, "");
+	dump_indent(n->nd_compare_left, indent + 4);
+	printf("%*sRight:\n", indent + 2, "");
+	dump_indent(n->nd_compare_right, indent + 4);
+}
+
 
 void dump_filter(node *n, int indent) {
 	printf("%*sFilter (%s):\n", indent, "", n->nd_filter_name);

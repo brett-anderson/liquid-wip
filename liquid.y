@@ -23,6 +23,7 @@ extern int yydebug;
   uint32_t ival;
   double dval;
   bool boolval;
+  int comparator;
 }
 
 %token <str> TEXT ID STRING ARGNAME
@@ -62,10 +63,12 @@ ENDPAGINATE
   liquid_texpr texpr0 texprs false true none empty blank arglist arglist0
   kwarglist kwarglist0
 
-%left '['
-%left '.'
-%left EQUALS NOT_EQUALS '>' '<' GTE LTE SPACESHIP
+%type <comparator> compare and_or
+
 %left AND OR
+%left EQUALS NOT_EQUALS '>' '<' GTE LTE SPACESHIP
+%left '.'
+%left '['
 
 %%
 
@@ -121,6 +124,12 @@ tag:
 | BEGIN_TAG IF expr END_TAG exprs else exprs endif {
     $$ = new_if_node($3, $5, $7);
   }
+| BEGIN_TAG UNLESS expr END_TAG exprs endunless {
+    $$ = new_unless_node($3, $5, NULL);
+  }
+| BEGIN_TAG UNLESS expr END_TAG exprs else exprs endunless {
+    $$ = new_unless_node($3, $5, $7);
+  }
 ;
 
 kwarglist:
@@ -156,6 +165,7 @@ endtablerow: BEGIN_TAG ENDTABLEROW END_TAG ;
 endfor:      BEGIN_TAG ENDFOR      END_TAG ;
 endif:       BEGIN_TAG ENDIF       END_TAG ;
 else:        BEGIN_TAG ELSE        END_TAG ;
+endunless:   BEGIN_TAG ENDUNLESS   END_TAG ;
 
 texpr0:
   ASSIGN id '=' fexpr        { $$ = new_assign_node($2, $4); }
@@ -200,20 +210,23 @@ expr:
 | literal
 | id
 | tag
-| expr compare expr   %prec EQUALS
-| expr and_or expr    %prec AND
+| expr compare expr   %prec EQUALS { $$ = new_compare_node($2, $1, $3); }
+| expr and_or expr    %prec AND    { $$ = new_compare_node($2, $1, $3); }
 ;
 
-and_or: AND | OR ;
+and_or:
+  AND        { $$ = COMP_AND; }
+| OR         { $$ = COMP_OR; }
+;
 
 compare:
-  EQUALS
-| NOT_EQUALS /* TODO rest */
-| '<'
-| '>'
-| GTE
-| LTE
-| SPACESHIP
+  EQUALS     { $$ = COMP_EQUALS; }
+| NOT_EQUALS { $$ = COMP_NOT_EQUALS; }
+| '<'        { $$ = COMP_LT; }
+| '>'        { $$ = COMP_GT; }
+| GTE        { $$ = COMP_GTE; }
+| LTE        { $$ = COMP_LTE; }
+| SPACESHIP  { $$ = COMP_SPACESHIP; }
 ;
 
 literal:
@@ -502,5 +515,13 @@ node *new_unless_node(node *cond, node *then_branch, node *else_branch) {
   node->nd_if_cond = cond;
   node->nd_if_then = else_branch;
   node->nd_if_else = then_branch;
+  return node;
+}
+
+node *new_compare_node(enum comparator_t comp, node *left, node *right) {
+  node *node = setup_node(NODE_COMPARE);
+  node->nd_compare_type = comp;
+  node->nd_compare_left = left;
+  node->nd_compare_right = right;
   return node;
 }

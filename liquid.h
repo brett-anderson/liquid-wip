@@ -66,6 +66,10 @@
 #define nd_if_then u2.node
 #define nd_if_else u3.node
 
+#define nd_compare_type u1.comparator
+#define nd_compare_left u2.node
+#define nd_compare_right u3.node
+
 enum node_type_t {
   NODE_TEXT = 0,
   NODE_STRING = 1,
@@ -98,6 +102,20 @@ enum node_type_t {
   NODE_TABLEROW_EXT = 28,
   NODE_FOR = 29,
   NODE_FOR_EXT = 30,
+  NODE_COMPARE = 31,
+  NODE_AND_OR = 32,
+};
+
+enum comparator_t {
+  COMP_EQUALS = 0,
+  COMP_NOT_EQUALS = 1,
+  COMP_LT = 2,
+  COMP_GT = 3,
+  COMP_GTE = 4,
+  COMP_LTE = 5,
+  COMP_SPACESHIP = 6,
+  COMP_AND = 7,
+  COMP_OR = 8,
 };
 
 struct node {
@@ -108,6 +126,7 @@ struct node {
     double _double;
     char *str;
     struct node *node;
+    enum comparator_t comparator;
   } u1;
   union u2 {
     char *str;
@@ -148,6 +167,8 @@ node *new_paginate_node(node *array, node *page_size, node *exprs);
 node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs);
 node *new_for_node(node *varname, node *array, node *arglist, node *exprs);
 node *new_if_node(node *cond, node *then_branch, node *else_branch);
+node *new_unless_node(node *cond, node *then_branch, node *else_branch);
+node *new_compare_node(enum comparator_t comp, node *left, node *right);
 
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
 node *new_exprs_node();
