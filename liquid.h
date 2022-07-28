@@ -146,7 +146,6 @@ node *new_bool_node(bool val);
 node *new_id_node(char *val);
 node *new_string_node(char *val);
 node *new_member_node(node *left, node *right);
-node *new_if_node(node *cond, node *then, node *else_);
 node *new_filter_node(node *input, node *name);
 node *new_argname_node(char *val);
 node *new_echo_node(node *content);
@@ -173,6 +172,8 @@ node *new_compare_node(enum comparator_t comp, node *left, node *right);
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
 node *new_exprs_node();
 node *add_expr_to_exprs(node *exprs, node *expr);
+node *merge_elsif_node(node *cond, node *then, node *else_);
+node *complete_if_node(node *cond, node *then, node *else_);
 
 void free_ast(node *ast);
 #endif

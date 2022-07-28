@@ -61,7 +61,7 @@ ENDPAGINATE
 %type <ast> int float text id string bool member filter fexpr
   literal expr exprs start argname filter0 output indexation texpr tag
   liquid_texpr texpr0 texprs false true none empty blank arglist arglist0
-  kwarglist kwarglist0
+  kwarglist kwarglist0 elsifs_else_endif
 
 %type <comparator> compare and_or
 
@@ -118,11 +118,8 @@ tag:
 | BEGIN_TAG FOR expr IN expr kwarglist END_TAG exprs endfor {
     $$ = new_for_node($3, $5, $6, $8);
   }
-| BEGIN_TAG IF expr END_TAG exprs endif {
-    $$ = new_if_node($3, $5, NULL);
-  }
-| BEGIN_TAG IF expr END_TAG exprs else exprs endif {
-    $$ = new_if_node($3, $5, $7);
+| BEGIN_TAG IF expr END_TAG exprs elsifs_else_endif {
+    $$ = complete_if_node($3, $5, $6);
   }
 | BEGIN_TAG UNLESS expr END_TAG exprs endunless {
     $$ = new_unless_node($3, $5, NULL);
@@ -130,6 +127,14 @@ tag:
 | BEGIN_TAG UNLESS expr END_TAG exprs else exprs endunless {
     $$ = new_unless_node($3, $5, $7);
   }
+;
+
+elsifs_else_endif:
+  BEGIN_TAG ELSIF expr END_TAG exprs elsifs_else_endif {
+    $$ = merge_elsif_node($3, $5, $6);
+  }
+| else exprs endif           { $$ = new_if_node(NULL, NULL, $2); }
+| endif                      { $$ = new_if_node(NULL, NULL, NULL); }
 ;
 
 kwarglist:
@@ -175,8 +180,6 @@ texpr0:
 | INCLUDE expr               { $$ = new_include_node($2); }
 | LAYOUT expr                { $$ = new_layout_node($2); }
 | SECTION expr               { $$ = new_section_node($2); }
-/* | IF */
-/* | UNLESS */
 /* | CASE */
 /* | FORM */
 ;
@@ -205,13 +208,13 @@ indexation:
 ;
 
 expr:
-  member              %prec '.'
-| indexation          %prec '['
+  member            %prec '.'
+| indexation        %prec '['
 | literal
 | id
 | tag
-| expr compare expr   %prec EQUALS { $$ = new_compare_node($2, $1, $3); }
-| expr and_or expr    %prec AND    { $$ = new_compare_node($2, $1, $3); }
+| expr compare expr %prec EQUALS { $$ = new_compare_node($2, $1, $3); }
+| expr and_or expr  %prec AND    { $$ = new_compare_node($2, $1, $3); }
 ;
 
 and_or:
@@ -524,4 +527,46 @@ node *new_compare_node(enum comparator_t comp, node *left, node *right) {
   node->nd_compare_left = left;
   node->nd_compare_right = right;
   return node;
+}
+
+node *merge_elsif_node(node *cond, node *then, node *else_) {
+  node *node = setup_node(NODE_IF);
+  node->nd_if_cond = cond;
+  node->nd_if_then = then;
+  if (else_->node_type == NODE_IF && else_->nd_if_cond == NULL) {
+    /* because the else node in an if/elsif/else chain builds an IF node with
+     * NULL,NULL,exprs. It's a slightly confusing hack. Maybe we can do better.
+     */
+    node->nd_if_else = else_->nd_if_else;
+  } else {
+    node->nd_if_else = else_;
+  }
+  return node;
+}
+
+node *complete_if_node(node *cond, node *then, node *else_) {
+  if (else_ == NULL) {
+    /* this was if/endif */
+    node *node = setup_node(NODE_IF);
+    node->nd_if_cond = cond;
+    node->nd_if_then = then;
+    return node;
+  }
+  // else_ is guaranteed to be NODE_IF
+  if (else_->nd_if_cond == NULL) {
+    /* this was if/else/endif. Reuse the else_ node */
+    else_->nd_if_cond = cond;
+    else_->nd_if_then = then;
+    return else_;
+  }
+
+  /* we had at least one elsif */
+  node *node = setup_node(NODE_IF);
+  node->nd_if_cond = cond;
+  node->nd_if_then = then;
+  node->nd_if_else = else_;
+  return node;
+
+  /* what about if/elsif/endif ? */
+
 }
