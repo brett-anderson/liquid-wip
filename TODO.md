@@ -1,7 +1,6 @@
 * `for x in y reversed`
 * `expr | filter: arg`
 * `expr | image_url: width: 400`
-* `if x contains y` (comparator? precedence?)
 * Capture args correctly on for and tablerow (really in kwarglist)
 * `liquid` tag semantics
 * `for x in (a..b)`

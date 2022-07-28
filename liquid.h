@@ -85,6 +85,9 @@
 #define nd_form_ext_kwarglist u1.node
 #define nd_form_ext_exprs u2.node
 
+#define ND_FLAG_FOR_REVERSED 1
+#define ND_FLAG_TABLEROW_REVERSED 1
+
 enum node_type_t {
   NODE_TEXT = 0,
   NODE_STRING = 1,
@@ -133,8 +136,9 @@ enum comparator_t {
   COMP_GTE = 4,
   COMP_LTE = 5,
   COMP_SPACESHIP = 6,
-  COMP_AND = 7,
-  COMP_OR = 8,
+  COMP_CONTAINS = 7,
+  COMP_AND = 8,
+  COMP_OR = 9,
 };
 
 struct node {
@@ -184,8 +188,8 @@ node *new_style_node(node *exprs);
 node *new_capture_node(node *varname, node *exprs);
 node *new_cycle_node(node *groupname, node *arglist);
 node *new_paginate_node(node *array, node *page_size, node *exprs);
-node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs);
-node *new_for_node(node *varname, node *array, node *arglist, node *exprs);
+node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs, bool reversed);
+node *new_for_node(node *varname, node *array, node *arglist, node *exprs, bool reversed);
 node *new_if_node(node *cond, node *then_branch, node *else_branch);
 node *new_unless_node(node *cond, node *then_branch, node *else_branch);
 node *new_compare_node(enum comparator_t comp, node *left, node *right);

@@ -31,7 +31,7 @@ extern int yydebug;
 %token <dval> FLOAT
 
 /* Tag/Output mode operators, etc. */
-%token EQUALS NOT_EQUALS GTE LTE SPACESHIP DOTDOT
+%token EQUALS NOT_EQUALS GTE LTE SPACESHIP DOTDOT CONTAINS REVERSED
 
 /* Conditional tags */
 %token IF ENDIF ELSIF ELSE UNLESS ENDUNLESS CASE ENDCASE
@@ -53,7 +53,7 @@ ENDPAGINATE
 %token ASSIGN CAPTURE ENDCAPTURE DECREMENT INCREMENT
 
 /* Other syntax */
-%token WITH AS IN CONTAINS EMPTY BLANK NONE WHEN BY OR AND TRUE FALSE
+%token WITH AS IN EMPTY BLANK NONE WHEN BY OR AND TRUE FALSE
 
 /* Misc */
 %token BEGIN_OUTPUT END_OUTPUT BEGIN_TAG END_TAG
@@ -66,7 +66,7 @@ ENDPAGINATE
 %type <comparator> compare and_or
 
 %left AND OR
-%left EQUALS NOT_EQUALS '>' '<' GTE LTE SPACESHIP
+%left EQUALS NOT_EQUALS '>' '<' GTE LTE SPACESHIP CONTAINS
 %left '.'
 %left '['
 
@@ -113,10 +113,16 @@ tag:
     $$ = new_paginate_node($3, $5, $7);
   }
 | BEGIN_TAG TABLEROW expr IN expr kwarglist END_TAG exprs endtablerow {
-    $$ = new_tablerow_node($3, $5, $6, $8);
+    $$ = new_tablerow_node($3, $5, $6, $8, false);
+  }
+| BEGIN_TAG TABLEROW expr IN expr REVERSED kwarglist END_TAG exprs endtablerow {
+    $$ = new_tablerow_node($3, $5, $7, $9, true);
   }
 | BEGIN_TAG FOR expr IN expr kwarglist END_TAG exprs endfor {
-    $$ = new_for_node($3, $5, $6, $8);
+    $$ = new_for_node($3, $5, $6, $8, false);
+  }
+| BEGIN_TAG FOR expr IN expr REVERSED kwarglist END_TAG exprs endfor {
+    $$ = new_for_node($3, $5, $7, $9, true);
   }
 | BEGIN_TAG IF expr END_TAG exprs elsifs_else_endif {
     $$ = complete_if_node($3, $5, $6);
@@ -266,6 +272,7 @@ compare:
 | GTE        { $$ = COMP_GTE; }
 | LTE        { $$ = COMP_LTE; }
 | SPACESHIP  { $$ = COMP_SPACESHIP; }
+| CONTAINS   { $$ = COMP_CONTAINS; }
 ;
 
 literal:
@@ -521,8 +528,11 @@ node *new_paginate_node(node *array, node *page_size, node *exprs) {
   return node;
 }
 
-node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs) {
+node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs, bool reversed) {
   node *node = setup_node(NODE_TABLEROW);
+  if (reversed) {
+    node->flags = ND_FLAG_TABLEROW_REVERSED;
+  }
   node->nd_tablerow_varname = varname->nd_string;
   node->nd_tablerow_array = array;
   node->nd_tablerow_ext = setup_node(NODE_TABLEROW_EXT);
@@ -531,8 +541,11 @@ node *new_tablerow_node(node *varname, node *array, node *arglist, node *exprs) 
   return node;
 }
 
-node *new_for_node(node *varname, node *array, node *arglist, node *exprs) {
+node *new_for_node(node *varname, node *array, node *arglist, node *exprs, bool reversed) {
   node *node = setup_node(NODE_FOR);
+  if (reversed) {
+    node->flags = ND_FLAG_FOR_REVERSED;
+  }
   node->nd_for_varname = varname->nd_string;
   node->nd_for_array = array;
   node->nd_for_ext = setup_node(NODE_FOR_EXT);

@@ -27,8 +27,11 @@
 {% for product in collection.products offset: 2 %}
 	{{ product.title }}
 {% endfor %}
+{% for product in collection.products reversed offset: 2 %} {%endfor%}
+{% tablerow product in collection.products reversed offset: 2 %} {%endtablerow%}
 {% unless a == 3 and b == 2 %} a {% else %} b {% endunless %}
-{% if a.b == 3 and b[2].c == 2 %} a {% endif %}
+{% if a.b != 3 and b[2].c == 2 %} a {% endif %}
+{% if a contains 3 and b < c or d > e or f <= g and h >= i or j <> k %} a {% endif %}
 {% case a %}
 {% when 1 %}
 	b

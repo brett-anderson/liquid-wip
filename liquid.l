@@ -185,6 +185,7 @@ space   [ \n\v\f\t\r]
 <S_OUTPUT,S_TAG>as          { return AS; }
 <S_OUTPUT,S_TAG>in          { return IN; }
 <S_OUTPUT,S_TAG>contains    { return CONTAINS; }
+<S_OUTPUT,S_TAG>reversed    { return REVERSED; }
 <S_OUTPUT,S_TAG>empty       { return EMPTY; }
 <S_OUTPUT,S_TAG>blank       { return BLANK; }
 <S_OUTPUT,S_TAG>nil         { return NONE; }
