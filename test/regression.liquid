@@ -1,5 +1,3 @@
-{% assign numbers = '1,2,3,4,5' | split: ',' %}
-
 {% comment %}{% assign a = "um" | upcase -%}{% endcomment %}
 {% assign a = "um" | upcase -%}
 {% raw %} {{ neato }} {% endraw %}
@@ -41,3 +39,6 @@
 {% form 'a', b %} e {% endform %}
 {% form 'a', c: d %} e {% endform %}
 {% form 'a' %} e {% endform %}
+{% if a %} b {% elsif c %} d {% elsif e %} f {% endif %}
+{% if a %} b {% elsif c %} d {% elsif e %} f {% else %} g {% endif %}
+{% unless a %} b {% elsif c %} d {% elsif e %} f {% else %} g {% endunless %}
