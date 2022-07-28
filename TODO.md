@@ -1,3 +1,5 @@
+* `for x in y reversed`
+* `contains`
 * Capture args correctly on for and tablerow (really in kwarglist)
 * `liquid` tag semantics
 * ranges

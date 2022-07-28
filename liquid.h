@@ -2,6 +2,7 @@
 #define __LIQUID_H__
 
 #include <stdbool.h>
+#include <stdint.h>
 
 /* More efficient implementation for AST:
  * Each level of the tree is a vector, and children point to element in next
@@ -122,7 +123,7 @@ enum node_type_t {
   NODE_CASE_WHEN = 34,
   NODE_FORM = 35,
   NODE_FORM_EXT = 36,
-};
+} __attribute__ ((__packed__)); /* uint8_t... assert? */
 
 enum comparator_t {
   COMP_EQUALS = 0,
@@ -137,7 +138,9 @@ enum comparator_t {
 };
 
 struct node {
-  enum node_type_t node_type;
+  enum node_type_t node_type; /* 1 byte */
+  uint8_t flags;
+  /* 6 bytes of padding */
   union u1 {
     int _int;
     bool _bool;
@@ -145,16 +148,16 @@ struct node {
     char *str;
     struct node *node;
     enum comparator_t comparator;
-  } u1;
+  } u1; /* 8 bytes */
   union u2 {
     char *str;
     struct node *node;
-  } u2;
+  } u2; /* 8 bytes */
   union u3 {
     struct node *node;
     struct node **nodelist;
-  } u3; 
-};
+  } u3; /* 8 bytes */
+}; /* 32 bytes... assert? */
 typedef struct node node;
 
 node *new_int_node(int val);
