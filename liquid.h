@@ -70,6 +70,14 @@
 #define nd_compare_left u2.node
 #define nd_compare_right u3.node
 
+#define nd_case_var u1.node
+#define nd_case_whens u2.node
+#define nd_case_else u3.node
+
+#define nd_case_when_cond u1.node
+#define nd_case_when_then u2.node
+#define nd_case_when_next u3.node
+
 enum node_type_t {
   NODE_TEXT = 0,
   NODE_STRING = 1,
@@ -104,6 +112,8 @@ enum node_type_t {
   NODE_FOR_EXT = 30,
   NODE_COMPARE = 31,
   NODE_AND_OR = 32,
+  NODE_CASE = 33,
+  NODE_CASE_WHEN = 34,
 };
 
 enum comparator_t {
@@ -168,6 +178,7 @@ node *new_for_node(node *varname, node *array, node *arglist, node *exprs);
 node *new_if_node(node *cond, node *then_branch, node *else_branch);
 node *new_unless_node(node *cond, node *then_branch, node *else_branch);
 node *new_compare_node(enum comparator_t comp, node *left, node *right);
+node *new_case_node(node *else_);
 
 node *add_arg_to_filter(node *filter, node *argname, node *argval);
 node *new_exprs_node();
@@ -175,6 +186,8 @@ node *add_expr_to_exprs(node *exprs, node *expr);
 node *merge_elsif_node(node *cond, node *then, node *else_);
 node *complete_if_node(node *cond, node *then, node *else_);
 node *complete_unless_node(node *cond, node *then, node *else_);
+node *merge_case_node(node *cond, node *then, node *case_node);
+node *complete_case_node(node *var, node *case_node);
 
 void free_ast(node *ast);
 #endif

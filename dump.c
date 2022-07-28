@@ -25,6 +25,7 @@ void dump_tablerow(node *n, int indent);
 void dump_for(node *n, int indent);
 void dump_compare(node *n, int indent);
 void dump_if(node *n, int indent);
+void dump_case(node *n, int indent);
 char *escape(char *buffer);
 
 void dump(node *n) {
@@ -122,6 +123,9 @@ void dump_indent(node *n, int indent) {
 			break;
 		case NODE_COMPARE:
 			dump_compare(n, indent);
+			break;
+		case NODE_CASE:
+			dump_case(n, indent);
 			break;
 		default:
 			yyerror("dump not written for node type!");
@@ -280,6 +284,26 @@ void dump_compare(node *n, int indent) {
 	dump_indent(n->nd_compare_right, indent + 4);
 }
 
+void dump_case(node *n, int indent) {
+	printf("%*sCase:\n", indent, "");
+	printf("%*sOf:\n", indent + 2, "");
+	dump_indent(n->nd_case_var, indent + 4);
+
+	printf("%*sWhens:\n", indent + 2, "");
+	node *curr = n->nd_case_whens;
+	while (curr != NULL) {
+		printf("%*sCond:\n", indent + 4, "");
+		dump_indent(curr->nd_case_when_cond, indent + 6);
+		printf("%*sThen:\n", indent + 4, "");
+		dump_indent(curr->nd_case_when_then, indent + 6);
+		curr = curr->nd_case_when_next;
+	}
+
+	if (n->nd_case_else != NULL) {
+		printf("%*sElse:\n", indent + 2, "");
+		dump_indent(n->nd_case_else, indent + 4);
+	}
+}
 
 void dump_filter(node *n, int indent) {
 	printf("%*sFilter (%s):\n", indent, "", n->nd_filter_name);

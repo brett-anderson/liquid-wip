@@ -29,3 +29,9 @@
 {% endfor %}
 {% unless a == 3 and b == 2 %} a {% else %} b {% endunless %}
 {% if a.b == 3 and b[2].c == 2 %} a {% endif %}
+{% case a %}
+{% when 1 %}
+	b
+{% else %}
+	lol
+{% endcase %}

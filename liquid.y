@@ -61,7 +61,7 @@ ENDPAGINATE
 %type <ast> int float text id string bool member filter fexpr
   literal expr exprs start argname filter0 output indexation texpr tag
   liquid_texpr texpr0 texprs false true none empty blank arglist arglist0
-  kwarglist kwarglist0 elsifs_else_endif elsifs_else_endunless
+  kwarglist kwarglist0 elsifs_else_endif elsifs_else_endunless whens_endcase
 
 %type <comparator> compare and_or
 
@@ -124,6 +124,23 @@ tag:
 | BEGIN_TAG UNLESS expr END_TAG exprs elsifs_else_endunless {
     $$ = complete_unless_node($3, $5, $6);
   }
+| BEGIN_TAG CASE expr END_TAG maybe_text whens_endcase {
+    /* The TEXT node here is invariably ignored. */
+    $$ = complete_case_node($3, $6);
+  }
+;
+
+maybe_text:
+  %empty
+| TEXT
+;
+
+whens_endcase:
+  BEGIN_TAG WHEN expr END_TAG exprs whens_endcase {
+    $$ = merge_case_node($3, $5, $6);
+  }
+| else exprs endcase         { $$ = new_case_node($2); }
+| endcase                    { $$ = new_case_node(NULL); }
 ;
 
 elsifs_else_endif:
@@ -176,6 +193,7 @@ endfor:      BEGIN_TAG ENDFOR      END_TAG ;
 endif:       BEGIN_TAG ENDIF       END_TAG ;
 else:        BEGIN_TAG ELSE        END_TAG ;
 endunless:   BEGIN_TAG ENDUNLESS   END_TAG ;
+endcase:     BEGIN_TAG ENDCASE     END_TAG ;
 
 texpr0:
   ASSIGN id '=' fexpr        { $$ = new_assign_node($2, $4); }
@@ -185,7 +203,6 @@ texpr0:
 | INCLUDE expr               { $$ = new_include_node($2); }
 | LAYOUT expr                { $$ = new_layout_node($2); }
 | SECTION expr               { $$ = new_section_node($2); }
-/* | CASE */
 /* | FORM */
 ;
 
@@ -597,4 +614,24 @@ node *complete_if_node(node *cond, node *then, node *else_) {
   node->nd_if_then = then;
   node->nd_if_else = else_;
   return node;
+}
+
+node *new_case_node(node *else_) {
+  node *node = setup_node(NODE_CASE);
+  node->nd_case_else = else_;
+  return node;
+}
+
+node *merge_case_node(node *cond, node *then, node *case_node) {
+  node *cw_node = setup_node(NODE_CASE_WHEN);
+  cw_node->nd_case_when_cond = cond;
+  cw_node->nd_case_when_then = then;
+  cw_node->nd_case_when_next = case_node->nd_case_whens;
+  case_node->nd_case_whens = cw_node;
+  return case_node;
+}
+
+node *complete_case_node(node *var, node *case_node) {
+  case_node->nd_case_var = var;
+  return case_node;
 }

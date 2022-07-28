@@ -1,4 +1,3 @@
-* if/eslif, unless/elsif
 * `case` tag
 * `form` tag
 * Capture args correctly on for and tablerow
